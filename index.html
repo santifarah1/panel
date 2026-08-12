@@ -405,6 +405,8 @@ function textoVence(c){
   return `<span class="venc">En ${d} días<br><span style="color:var(--tinta-3);font-size:12.5px">${aFecha(c.vence)}</span></span>`;
 }
 function textoVisto(c){
+  // Un cliente recién dado de alta todavía no abrió la app: no hay fecha.
+  if(!c.visto)return '<span class="venc" style="color:var(--tinta-3)">Todavía no entró</span>';
   const d=-diasPara(c.visto);
   const t=d<=0?'Hoy':d===1?'Ayer':`Hace ${d} días`;
   // Un cliente que paga pero hace semanas que no entra es el que está por irse.
@@ -419,8 +421,8 @@ function pintar(){
   document.getElementById('kpis').innerHTML=`
     <div class="kpi"><div class="et">Clientes activos</div><div class="val">${act.length}</div>
       <div class="pie">${clientes.length-act.length} dado${clientes.length-act.length===1?'':'s'} de baja</div></div>
-    <div class="kpi"><div class="et">Facturación mensual</div><div class="val">${pesos(act.reduce((s,c)=>s+c.precio,0))}</div>
-      <div class="pie">Si todos pagan en fecha</div></div>
+    <div class="kpi"><div class="et">Facturación mensual</div><div class="val">${pesos(act.reduce((s,c)=>s+(c.precio||0),0))}</div>
+      <div class="pie">${(()=>{const g=act.filter(c=>!c.precio).length;return g?`${act.length-g} cliente${act.length-g===1?'':'s'} · ${g} gratis`:'Si todos pagan en fecha'})()}</div></div>
     <div class="kpi ${venc.length?'alerta':''}"><div class="et">Hay que escribirles</div><div class="val">${venc.length+pv.length}</div>
       <div class="pie">${venc.length} vencido${venc.length===1?'':'s'} · ${pv.length} por vencer</div></div>`;
 
@@ -439,7 +441,7 @@ function pintar(){
     <tr onclick="verFicha(${c.id})" class="${c.baja?'apagado':''}">
       <td class="c-nom"><span class="nom"><span class="punto ${P[estado(c)]}"></span>${esc(c.nombre)}</span></td>
       <td class="c-clave"><span class="clave">${esc(c.clave)}</span></td>
-      <td class="der c-monto"><span class="monto">${pesos(c.precio)}</span></td>
+      <td class="der c-monto">${c.precio?`<span class="monto">${pesos(c.precio)}</span>`:'<span class="monto" style="color:var(--tinta-3);font-weight:500">Gratis</span>'}</td>
       <td class="c-venc">${textoVence(c)}</td>
       <td class="c-visto">${textoVisto(c)}</td>
       <td class="der c-acc"><div class="acc" onclick="event.stopPropagation()">
@@ -540,7 +542,8 @@ function verFicha(id){
   if(c.baja)avisos+='<div class="aviso a-rojo"><span>⛔</span><div><b>Dado de baja.</b> No puede usar la app. Sus datos siguen intactos en su computadora.</div></div>';
   else if(d<0)avisos+=`<div class="aviso a-rojo"><span>⚠️</span><div><b>Debe ${-d} día${d===-1?'':'s'}.</b> Escribile antes de dar de baja: casi siempre es olvido, no mala fe.</div></div>`;
   else if(d<=7)avisos+=`<div class="aviso a-amar"><span>📅</span><div>Le vence en ${d} día${d===1?'':'s'}. Buen momento para recordarle.</div></div>`;
-  if(dv>=14&&!c.baja)avisos+=`<div class="aviso a-amar"><span>📉</span><div><b>Hace ${dv} días que no abre la app.</b> Aunque esté pagando, este es el que se da de baja el mes que viene. Llamalo.</div></div>`;
+  if(c.visto&&dv>=14&&!c.baja)avisos+=`<div class="aviso a-amar"><span>📉</span><div><b>Hace ${dv} días que no abre la app.</b> Aunque esté pagando, este es el que se da de baja el mes que viene. Llamalo.</div></div>`;
+  if(!c.precio)avisos+='<div class="aviso a-cielo"><span>🎁</span><div><b>Cuenta gratis.</b> No suma a la facturación ni aparece en los avisos de vencimiento.</div></div>';
   if(c.equipos>=3)avisos+=`<div class="aviso a-cielo"><span>💻</span><div>Se usa desde <b>${c.equipos} equipos distintos</b>. Puede ser que tenga la app en el campo y en la casa, o que haya compartido la clave.</div></div>`;
 
   document.getElementById('ficha').innerHTML=`
@@ -553,10 +556,10 @@ function verFicha(id){
       ${avisos}
       <div class="dato"><span class="k">Clave</span><span class="v"><span class="clave">${esc(c.clave)}</span></span></div>
       <div class="dato"><span class="k">Contacto</span><span class="v">${esc(c.tel)}</span></div>
-      <div class="dato"><span class="k">Precio por mes</span><span class="v">${pesos(c.precio)}</span></div>
+      <div class="dato"><span class="k">Precio por mes</span><span class="v">${c.precio?pesos(c.precio):'Gratis'}</span></div>
       <div class="dato"><span class="k">Paga hasta</span><span class="v">${aFecha(c.vence)}</span></div>
       <div class="dato"><span class="k">Cliente desde</span><span class="v">${aFecha(c.alta)}</span></div>
-      <div class="dato"><span class="k">Última vez que entró</span><span class="v">${dv<=0?'Hoy':dv===1?'Ayer':'Hace '+dv+' días'}</span></div>
+      <div class="dato"><span class="k">Última vez que entró</span><span class="v">${!c.visto?'Todavía no entró':dv<=0?'Hoy':dv===1?'Ayer':'Hace '+dv+' días'}</span></div>
       <div class="dato"><span class="k">Equipos donde la usa</span><span class="v">${c.equipos}</span></div>
       <div class="dato"><span class="k">Total cobrado</span><span class="v">${pesos(c.pagos.reduce((s,p)=>s+p.m,0))}</span></div>
 
@@ -587,10 +590,11 @@ function cerrarAlta(){document.getElementById('velo-alta').classList.remove('on'
 async function guardarAlta(){
   const n=document.getElementById('a-nom').value.trim();
   const t=document.getElementById('a-tel').value.trim();
-  const p=parseInt((document.getElementById('a-precio').value||'').replace(/\D/g,''))||0;
+  const pTxt=(document.getElementById('a-precio').value||'').replace(/\D/g,'');
+  const p=pTxt===''?NaN:parseInt(pTxt);
   const e=document.getElementById('alta-err');
   if(!n){e.textContent='Falta el nombre del cliente.';e.style.display='block';return}
-  if(!p){e.textContent='Poné un precio por mes.';e.style.display='block';return}
+  if(isNaN(p)||p<0){e.textContent='Poné un precio por mes (0 si es una cuenta gratis).';e.style.display='block';return}
   if(demo){
     const c={id:Date.now(),nombre:n,tel:t||'—',clave:nuevaClave(),precio:p,
       vence:hoyMas(30),alta:HOY.toISOString().slice(0,10),visto:hoyMas(0),equipos:0,baja:false,pagos:[]};
