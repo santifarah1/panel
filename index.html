@@ -516,14 +516,15 @@ async function editarCliente(id){
   if(nombre===null)return;
   const tel=prompt('Teléfono o contacto:',c.tel==='—'?'':c.tel);
   if(tel===null)return;
-  const precio=prompt('Precio por mes (sólo números):',c.precio);
+  const precio=prompt('Precio por mes (sólo números).\n\nPoné 0 si es una cuenta gratis.',c.precio);
   if(precio===null)return;
   const vence=prompt('Paga hasta (AAAA-MM-DD).\n\nPara una cuenta gratis de por vida poné: 2099-12-31',c.vence);
   if(vence===null)return;
   const v=(vence||'').trim();
   if(!/^\d{4}-\d{2}-\d{2}$/.test(v)){alert('La fecha tiene que ser tipo 2099-12-31 (año-mes-día).');return}
   const datos={id,nombre:(nombre||'').trim()||c.nombre,tel:(tel||'').trim(),
-    precio:parseInt((''+precio).replace(/\D/g,''))||c.precio,vence:v};
+    precio:(()=>{const t=(''+precio).replace(/\D/g,'');const n=t===''?NaN:parseInt(t);return isNaN(n)?c.precio:n})(),
+    vence:v};
   if(demo){Object.assign(c,datos);pintar();verFicha(id);return}
   try{
     const j=await api('/admin/editar',datos);
