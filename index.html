@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Panel · Gestión del Campo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;650&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --lienzo:#F5F1E8;--tarjeta:#FDFBF6;--tinta:#2E2820;--tinta-2:#6E6656;--tinta-3:#9E9686;
+  --borde:#D8D0BE;--borde-vivo:#C8BFA8;
+  --campo:#5C7A3D;--campo-hondo:#48632E;--campo-suave:#E7EDD9;
+  --trigo:#C9A24B;--trigo-suave:#F4EAD0;--trigo-hondo:#8A6B22;
+  --ladrillo:#A6533A;--ladrillo-suave:#F0E1D8;
+  --cielo:#4A6B8A;--cielo-suave:#DFE6EE;
+  --s1:0 1px 2px rgba(60,50,30,.04),0 2px 6px rgba(60,50,30,.05);
+  --s2:0 4px 14px rgba(60,50,30,.10);
+  --radio:14px;
+}
+body{font-family:"Inter",system-ui,sans-serif;background:var(--lienzo);color:var(--tinta);
+  font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.cifra,.num{font-variant-numeric:tabular-nums}
+
+/* ===== LOGIN ===== */
+#login{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;background:var(--lienzo);padding:20px}
+.caja-login{background:var(--tarjeta);border:1px solid var(--borde);border-radius:var(--radio);
+  box-shadow:var(--s2);padding:30px 28px;width:100%;max-width:370px}
+.caja-login .logo{width:44px;height:44px;border-radius:12px;background:var(--campo-hondo);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-family:"Space Grotesk",sans-serif;
+  font-weight:700;font-size:21px;margin-bottom:16px}
+.caja-login h1{font-family:"Space Grotesk",sans-serif;font-size:21px;font-weight:600;letter-spacing:-.02em;margin-bottom:4px}
+.caja-login p{color:var(--tinta-2);font-size:13.5px;margin-bottom:20px}
+
+/* ===== ESTRUCTURA ===== */
+.topbar{background:var(--tarjeta);border-bottom:1px solid var(--borde);padding:0 22px;
+  height:62px;display:flex;align-items:center;gap:13px;position:sticky;top:0;z-index:40}
+.topbar .logo{width:34px;height:34px;border-radius:10px;background:var(--campo-hondo);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-family:"Space Grotesk",sans-serif;font-weight:700;font-size:17px}
+.topbar h1{font-family:"Space Grotesk",sans-serif;font-size:16.5px;font-weight:600;letter-spacing:-.02em}
+.topbar .der{margin-left:auto;display:flex;gap:9px;align-items:center}
+main{max-width:1120px;margin:0 auto;padding:22px 22px 70px}
+
+/* ===== BOTONES ===== */
+.btn{font-family:inherit;font-size:14px;font-weight:500;border-radius:10px;padding:9px 15px;
+  border:1px solid var(--borde-vivo);background:var(--tarjeta);color:var(--tinta);cursor:pointer;
+  transition:background .12s;white-space:nowrap;min-height:38px}
+.btn:hover{background:var(--lienzo)}
+.btn-pri{background:var(--campo-hondo);border-color:var(--campo-hondo);color:#fff}
+.btn-pri:hover{background:var(--campo)}
+.btn-mini{padding:6px 11px;font-size:13px;min-height:32px}
+.btn-peli{color:var(--ladrillo)}
+.btn-peli:hover{background:var(--ladrillo-suave)}
+
+/* ===== KPI ===== */
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:13px;margin-bottom:22px}
+.kpi{background:var(--tarjeta);border:1px solid var(--borde);border-radius:var(--radio);padding:16px 18px;box-shadow:var(--s1)}
+.kpi .et{font-size:11px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--tinta-3);margin-bottom:7px}
+.kpi .val{font-family:"Space Grotesk",sans-serif;font-size:29px;font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1.05}
+.kpi .pie{font-size:12.5px;color:var(--tinta-2);margin-top:5px}
+.kpi.alerta{background:var(--ladrillo-suave);border-color:#E0BFB0}
+.kpi.alerta .val{color:var(--ladrillo)}
+
+/* ===== FILTROS ===== */
+.barra{display:flex;gap:9px;flex-wrap:wrap;align-items:center;margin-bottom:15px}
+.chip{font-family:inherit;font-size:13.5px;font-weight:500;padding:7px 13px;border-radius:9px;
+  border:1px solid var(--borde-vivo);background:var(--tarjeta);color:var(--tinta-2);cursor:pointer;min-height:36px}
+.chip:hover{background:var(--lienzo)}
+.chip.on{background:var(--campo-suave);border-color:#BFD1A4;color:var(--campo-hondo);font-weight:600}
+.chip .n{font-variant-numeric:tabular-nums;opacity:.65;margin-left:4px}
+.buscador{flex:1;min-width:170px;font-family:inherit;font-size:14px;padding:8px 13px;
+  border:1px solid var(--borde-vivo);border-radius:10px;background:var(--tarjeta);color:var(--tinta);min-height:38px}
+.buscador:focus{outline:2px solid var(--campo);outline-offset:-1px}
+
+/* ===== TABLA ===== */
+.panel{background:var(--tarjeta);border:1px solid var(--borde);border-radius:var(--radio);
+  box-shadow:var(--s1);overflow:hidden}
+table{width:100%;border-collapse:collapse}
+th{font-size:10.5px;font-weight:650;letter-spacing:.09em;text-transform:uppercase;color:var(--tinta-3);
+  text-align:left;padding:11px 14px;border-bottom:1px solid var(--borde);background:var(--lienzo);
+  cursor:pointer;user-select:none;white-space:nowrap}
+th:hover{color:var(--tinta-2)}
+th.der,td.der{text-align:right}
+th .fl{opacity:.5;font-size:9px;margin-left:3px}
+td{padding:11px 14px;border-bottom:1px solid #EFE9DC;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tbody tr{cursor:pointer}
+tbody tr:hover{background:#FAF7F0}
+.nom{font-weight:600;display:flex;align-items:center;gap:8px}
+.punto{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.p-verde{background:var(--campo)}.p-amar{background:var(--trigo)}
+.p-rojo{background:var(--ladrillo)}.p-gris{background:#B5AC9B}
+.clave{font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:12.5px;color:var(--tinta-2);letter-spacing:.02em;white-space:nowrap}
+.monto{font-variant-numeric:tabular-nums;font-weight:600;white-space:nowrap}
+.venc{font-variant-numeric:tabular-nums;white-space:nowrap}
+.venc b{font-weight:600}
+.v-rojo{color:var(--ladrillo)}.v-amar{color:var(--trigo-hondo)}.v-gris{color:var(--tinta-3)}
+.acc{display:flex;gap:6px;justify-content:flex-end}
+.apagado{opacity:.5}
+.vacio{padding:44px 22px;text-align:center;color:var(--tinta-2)}
+.vacio b{display:block;color:var(--tinta);font-size:15.5px;margin-bottom:5px;font-weight:600}
+
+/* ===== FICHA ===== */
+.velo{position:fixed;inset:0;background:rgba(46,40,32,.42);z-index:60;display:none;
+  align-items:center;justify-content:center;padding:20px}
+.velo.on{display:flex}
+.ficha{background:var(--tarjeta);border-radius:var(--radio);box-shadow:var(--s2);
+  width:100%;max-width:490px;max-height:88vh;overflow-y:auto}
+.ficha-top{padding:20px 22px 16px;border-bottom:1px solid var(--borde);display:flex;align-items:flex-start;gap:12px}
+.ficha-top h2{font-family:"Space Grotesk",sans-serif;font-size:20px;font-weight:600;letter-spacing:-.02em;flex:1}
+.ficha-cuerpo{padding:18px 22px 22px}
+.dato{display:flex;justify-content:space-between;gap:14px;padding:9px 0;border-bottom:1px solid #EFE9DC;font-size:14px}
+.dato:last-of-type{border-bottom:none}
+.dato .k{color:var(--tinta-2)}
+.dato .v{font-weight:500;text-align:right;font-variant-numeric:tabular-nums}
+.subt{font-size:11px;font-weight:650;letter-spacing:.09em;text-transform:uppercase;color:var(--tinta-3);margin:20px 0 8px}
+.hist{font-size:13.5px;color:var(--tinta-2);display:flex;justify-content:space-between;padding:6px 0;font-variant-numeric:tabular-nums}
+.aviso{border-radius:11px;padding:11px 14px;font-size:13.5px;display:flex;gap:9px;margin-bottom:14px}
+.a-amar{background:var(--trigo-suave);border:1px solid #E0CB96;color:#6B5318}
+.a-rojo{background:var(--ladrillo-suave);border:1px solid #E0BFB0;color:#7A3A26}
+.a-cielo{background:var(--cielo-suave);border:1px solid #BFCEDD;color:#31506B}
+.cerrar{background:none;border:none;font-size:22px;color:var(--tinta-3);cursor:pointer;line-height:1;padding:2px 6px}
+.campo-l{display:block;font-size:12.5px;font-weight:600;color:var(--tinta-2);margin-bottom:5px}
+.inp{width:100%;font-family:inherit;font-size:15px;padding:10px 13px;border:1px solid var(--borde-vivo);
+  border-radius:10px;background:#fff;color:var(--tinta);margin-bottom:13px;min-height:42px}
+.inp:focus{outline:2px solid var(--campo);outline-offset:-1px}
+.inp.num{font-variant-numeric:tabular-nums}
+.demo{background:var(--cielo-suave);border:1px solid #BFCEDD;color:#31506B;border-radius:11px;
+  padding:11px 15px;font-size:13.5px;margin-bottom:18px;display:flex;gap:9px;align-items:flex-start}
+
+/* ===== MOBILE ===== */
+@media(max-width:820px){
+  .kpis{grid-template-columns:1fr;gap:10px}
+  .kpi{display:flex;align-items:baseline;gap:12px;padding:13px 16px}
+  .kpi .et{margin-bottom:0;flex:1}
+  .kpi .val{font-size:23px}
+  .kpi .pie{margin-top:0}
+  main{padding:16px 14px 60px}
+  thead{display:none}
+  tbody tr{display:block;padding:13px 15px;border-bottom:1px solid #EFE9DC}
+  td{display:block;padding:0;border:none}
+  td.c-nom{margin-bottom:3px}
+  td.c-clave{margin-bottom:9px}
+  td.c-monto{display:inline-block;margin-right:12px}
+  td.c-venc{display:inline-block}
+  td.c-acc{margin-top:11px}
+  .acc{justify-content:flex-start}
+  .acc .btn{flex:1}
+}
+</style>
+</head>
+<body>
+
+<!-- ===== LOGIN ===== -->
+<div id="login">
+  <div class="caja-login">
+    <div class="logo">C</div>
+    <h1>Panel de clientes</h1>
+    <p>Gestión del Campo</p>
+    <label class="campo-l" for="clave">Clave de administrador</label>
+    <input type="password" id="clave" class="inp" autocomplete="current-password"
+           enterkeyhint="go" onkeydown="if(event.key==='Enter')entrar()" placeholder="••••••••">
+    <div id="login-err" style="display:none;color:var(--ladrillo);font-size:13px;margin:-6px 0 12px"></div>
+    <button class="btn btn-pri" style="width:100%" onclick="entrar()">Entrar</button>
+  </div>
+</div>
+
+<!-- ===== APP ===== -->
+<div id="app" style="display:none">
+  <div class="topbar">
+    <div class="logo">C</div>
+    <h1>Panel de clientes</h1>
+    <div class="der">
+      <button class="btn btn-pri btn-mini" onclick="abrirAlta()">+ Nuevo cliente</button>
+      <button class="btn btn-mini" onclick="recargar()" title="Actualizar">↻</button>
+      <button class="btn btn-mini" onclick="salir()">Salir</button>
+    </div>
+  </div>
+
+  <main>
+    <div class="demo" id="banner-demo" style="display:none">
+      <span>🧪</span>
+      <div><b>Modo prueba.</b> Los datos son inventados y se pierden al recargar. Configurá la dirección del Worker para trabajar con los clientes de verdad. <button class="btn btn-mini" style="margin-left:6px" onclick="pedirWorker()">Configurar</button></div>
+    </div>
+    <div class="demo" id="banner-error" style="display:none;background:var(--ladrillo-suave);border-color:#E0BFB0;color:#7A3A26">
+      <span>⚠️</span><div id="banner-error-txt"></div>
+    </div>
+
+    <div class="kpis" id="kpis"></div>
+
+    <div class="barra">
+      <button class="chip on" data-f="todos" onclick="filtrar('todos')">Todos <span class="n" id="n-todos"></span></button>
+      <button class="chip" data-f="dia" onclick="filtrar('dia')">Al día <span class="n" id="n-dia"></span></button>
+      <button class="chip" data-f="porvencer" onclick="filtrar('porvencer')">Por vencer <span class="n" id="n-porvencer"></span></button>
+      <button class="chip" data-f="vencidos" onclick="filtrar('vencidos')">Vencidos <span class="n" id="n-vencidos"></span></button>
+      <button class="chip" data-f="baja" onclick="filtrar('baja')">De baja <span class="n" id="n-baja"></span></button>
+      <input class="buscador" id="buscar" type="search" placeholder="Buscar por nombre o clave..." oninput="pintar()">
+    </div>
+
+    <div class="panel">
+      <table>
+        <thead><tr>
+          <th onclick="ordenar('nombre')">Cliente <span class="fl" id="fl-nombre"></span></th>
+          <th onclick="ordenar('clave')">Clave <span class="fl" id="fl-clave"></span></th>
+          <th class="der" onclick="ordenar('precio')">Por mes <span class="fl" id="fl-precio"></span></th>
+          <th onclick="ordenar('vence')">Vencimiento <span class="fl" id="fl-vence"></span></th>
+          <th onclick="ordenar('visto')">Última vez <span class="fl" id="fl-visto"></span></th>
+          <th class="der">Acciones</th>
+        </tr></thead>
+        <tbody id="filas"></tbody>
+      </table>
+      <div class="vacio" id="vacio" style="display:none"></div>
+    </div>
+  </main>
+</div>
+
+<!-- ===== FICHA ===== -->
+<div class="velo" id="velo-ficha" onclick="if(event.target===this)cerrarFicha()">
+  <div class="ficha" id="ficha"></div>
+</div>
+
+<!-- ===== ALTA ===== -->
+<div class="velo" id="velo-alta" onclick="if(event.target===this)cerrarAlta()">
+  <div class="ficha">
+    <div class="ficha-top">
+      <h2>Nuevo cliente</h2>
+      <button class="cerrar" onclick="cerrarAlta()">×</button>
+    </div>
+    <div class="ficha-cuerpo">
+      <label class="campo-l" for="a-nom">Nombre y apellido</label>
+      <input class="inp" id="a-nom" placeholder="Juan Pérez" enterkeyhint="next">
+      <label class="campo-l" for="a-tel">Teléfono o contacto</label>
+      <input class="inp" id="a-tel" inputmode="tel" placeholder="11 5555-5555" enterkeyhint="next">
+      <label class="campo-l" for="a-precio">Precio por mes</label>
+      <input class="inp num" id="a-precio" inputmode="numeric" value="35000" enterkeyhint="done">
+      <div id="alta-err" style="display:none;color:var(--ladrillo);font-size:13px;margin:-6px 0 12px"></div>
+      <div class="aviso a-cielo" style="margin-top:4px">
+        <span>🔑</span>
+        <div>La clave se genera sola y arranca con <b>30 días pagos</b> desde hoy. Después se la mandás por WhatsApp.</div>
+      </div>
+      <button class="btn btn-pri" style="width:100%" onclick="guardarAlta()">Dar de alta</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============ CONEXIÓN CON EL WORKER ============
+// El panel no guarda nada: todo vive en el Worker. Si no hay Worker
+// configurado, funciona en modo prueba con clientes inventados para poder
+// mirarlo sin tocar datos reales.
+const HOY=new Date();
+const fNum=new Intl.NumberFormat('es-AR');
+const dia=86400000;
+let API=localStorage.getItem('panel_worker')||'';
+let ADMIN='';
+let demo=!API;
+
+function hoyMas(d){const x=new Date(HOY);x.setDate(x.getDate()+d);return x.toISOString().slice(0,10)}
+function aFecha(iso){if(!iso)return '—';const[a,m,d]=iso.split('-');return d+'/'+m+'/'+a}
+function pesos(n){return '$'+fNum.format(n||0)}
+function diasPara(iso){
+  const v=new Date(iso+'T00:00:00'), h=new Date(HOY.toISOString().slice(0,10)+'T00:00:00');
+  return Math.round((v-h)/dia);
+}
+function estado(c){
+  if(c.baja)return 'baja';
+  const d=diasPara(c.vence);
+  if(d<0)return 'vencidos';
+  if(d<=7)return 'porvencer';
+  return 'dia';
+}
+const ALFA='ACDEFGHJKMNPQRTUVWXY2346789';
+function nuevaClave(){
+  let s='';for(let i=0;i<8;i++)s+=ALFA[Math.floor(Math.random()*ALFA.length)];
+  return 'CAMPO-'+s.slice(0,4)+'-'+s.slice(4);
+}
+function pedirWorker(){
+  const v=prompt('Dirección del Worker\n\nEjemplo: https://gestion-campo.TU-USUARIO.workers.dev\n\n(dejalo vacío para volver al modo prueba)',API);
+  if(v===null)return;
+  API=v.trim().replace(/\/+$/,'');
+  if(API)localStorage.setItem('panel_worker',API);else localStorage.removeItem('panel_worker');
+  location.reload();
+}
+function errorBanner(txt){
+  const b=document.getElementById('banner-error');
+  if(!txt){b.style.display='none';return}
+  document.getElementById('banner-error-txt').innerHTML=txt;
+  b.style.display='flex';
+}
+async function api(ruta,body){
+  if(demo)throw new Error('modo-demo');
+  const r=await fetch(API+ruta,{
+    method:'POST',
+    headers:{'Content-Type':'application/json','X-Admin':ADMIN},
+    body:JSON.stringify(body||{})
+  });
+  if(r.status===401)throw new Error('clave');
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok)throw new Error(j.error||('error '+r.status));
+  return j;
+}
+
+// ===== clientes de prueba (sólo en modo demo) =====
+function clientesDemo(){return [
+  {id:1,nombre:'María González',tel:'2920 44-1188',clave:'CAMPO-H7K2-9XQ4',precio:35000,
+   vence:hoyMas(-4),alta:'2026-02-14',visto:hoyMas(-1),equipos:1,baja:false,
+   pagos:[{f:'2026-07-11',m:35000},{f:'2026-06-11',m:35000},{f:'2026-05-11',m:30000},{f:'2026-04-11',m:30000}]},
+  {id:2,nombre:'Ernesto Villalba',tel:'2984 55-2210',clave:'CAMPO-R4TM-6WPD',precio:35000,
+   vence:hoyMas(2),alta:'2026-03-02',visto:hoyMas(0),equipos:2,baja:false,
+   pagos:[{f:'2026-07-13',m:35000},{f:'2026-06-13',m:35000},{f:'2026-05-13',m:30000}]},
+  {id:3,nombre:'Cooperativa El Alba',tel:'2920 47-9004',clave:'CAMPO-YQ33-KDFN',precio:45000,
+   vence:hoyMas(6),alta:'2026-01-20',visto:hoyMas(-22),equipos:1,baja:false,
+   pagos:[{f:'2026-07-17',m:45000},{f:'2026-06-17',m:45000},{f:'2026-05-17',m:40000},{f:'2026-04-17',m:40000},{f:'2026-03-17',m:40000}]},
+  {id:4,nombre:'Hugo Sandoval',tel:'2946 30-7712',clave:'CAMPO-8FWA-2JHC',precio:35000,
+   vence:hoyMas(19),alta:'2026-05-28',visto:hoyMas(0),equipos:1,baja:false,
+   pagos:[{f:'2026-07-30',m:35000},{f:'2026-06-30',m:35000}]},
+  {id:5,nombre:'Estancia La Redonda',tel:'2920 41-3355',clave:'CAMPO-KP96-XRDT',precio:35000,
+   vence:hoyMas(-19),alta:'2026-02-01',visto:hoyMas(-31),equipos:1,baja:true,
+   pagos:[{f:'2026-06-23',m:35000},{f:'2026-05-23',m:30000}]},
+  {id:6,nombre:'Raúl Etchepare',tel:'2925 60-8890',clave:'CAMPO-3NVX-7GQM',precio:35000,
+   vence:hoyMas(24),alta:'2026-06-11',visto:hoyMas(-3),equipos:3,baja:false,
+   pagos:[{f:'2026-08-04',m:35000},{f:'2026-07-04',m:35000}]}
+]}
+let clientes=[];
+
+let filtro='todos', orden='vence', asc=true, verId=null;
+
+// ===== login =====
+async function entrar(){
+  const v=document.getElementById('clave').value;
+  const e=document.getElementById('login-err');
+  const btn=document.querySelector('#login .btn-pri');
+  if(demo){
+    if(v!=='campo'){e.textContent='Clave incorrecta. En modo prueba es: campo';e.style.display='block';return}
+    clientes=clientesDemo();
+    return abrirApp();
+  }
+  ADMIN=v;
+  btn.disabled=true;btn.textContent='Entrando...';
+  try{
+    const j=await api('/admin/listar');
+    clientes=j.clientes||[];
+    e.style.display='none';
+    abrirApp();
+  }catch(err){
+    ADMIN='';
+    e.textContent=err.message==='clave'?'Clave incorrecta.'
+      :'No se pudo conectar con el servidor. Revisá la dirección del Worker o tu internet.';
+    e.style.display='block';
+  }finally{btn.disabled=false;btn.textContent='Entrar'}
+}
+function abrirApp(){
+  document.getElementById('login').style.display='none';
+  document.getElementById('app').style.display='block';
+  document.getElementById('banner-demo').style.display=demo?'flex':'none';
+  pintar();
+}
+async function recargar(){
+  if(demo)return;
+  try{clientes=(await api('/admin/listar')).clientes||[];errorBanner('');pintar()}
+  catch(err){errorBanner('No se pudo actualizar la lista: '+err.message)}
+}
+function salir(){
+  ADMIN='';clientes=[];
+  document.getElementById('app').style.display='none';
+  document.getElementById('login').style.display='flex';
+  document.getElementById('clave').value='';
+  document.getElementById('login-err').style.display='none';
+}
+
+// ===== lista =====
+function filtrar(f){
+  filtro=f;
+  document.querySelectorAll('.chip').forEach(c=>c.classList.toggle('on',c.dataset.f===f));
+  pintar();
+}
+function ordenar(campo){
+  if(orden===campo)asc=!asc; else{orden=campo;asc=true}
+  pintar();
+}
+function visibles(){
+  const q=(document.getElementById('buscar').value||'').trim().toLowerCase();
+  let l=clientes.filter(c=>filtro==='todos'?!c.baja:estado(c)===filtro);
+  if(q)l=clientes.filter(c=>(c.nombre+' '+c.clave).toLowerCase().includes(q));
+  const dir=asc?1:-1;
+  return l.sort((a,b)=>{
+    if(orden==='nombre')return a.nombre.localeCompare(b.nombre,'es')*dir;
+    if(orden==='clave')return a.clave.localeCompare(b.clave)*dir;
+    if(orden==='precio')return (a.precio-b.precio)*dir;
+    if(orden==='visto')return (new Date(a.visto)-new Date(b.visto))*dir;
+    return (new Date(a.vence)-new Date(b.vence))*dir;   // por defecto: el que vence primero
+  });
+}
+function textoVence(c){
+  if(c.baja)return '<span class="venc v-gris">Dado de baja</span>';
+  const d=diasPara(c.vence);
+  if(d<0)return `<span class="venc v-rojo"><b>Venció hace ${-d} día${d===-1?'':'s'}</b><br><span style="font-weight:400;font-size:12.5px">${aFecha(c.vence)}</span></span>`;
+  if(d===0)return `<span class="venc v-amar"><b>Vence hoy</b><br><span style="font-weight:400;font-size:12.5px">${aFecha(c.vence)}</span></span>`;
+  if(d<=7)return `<span class="venc v-amar"><b>En ${d} día${d===1?'':'s'}</b><br><span style="font-weight:400;font-size:12.5px">${aFecha(c.vence)}</span></span>`;
+  return `<span class="venc">En ${d} días<br><span style="color:var(--tinta-3);font-size:12.5px">${aFecha(c.vence)}</span></span>`;
+}
+function textoVisto(c){
+  const d=-diasPara(c.visto);
+  const t=d<=0?'Hoy':d===1?'Ayer':`Hace ${d} días`;
+  // Un cliente que paga pero hace semanas que no entra es el que está por irse.
+  const frio=d>=14&&!c.baja;
+  return `<span class="venc" style="${frio?'color:var(--trigo-hondo);font-weight:600':'color:var(--tinta-2)'}">${t}${frio?' ⚠️':''}</span>`;
+}
+function pintar(){
+  const l=visibles();
+  const act=clientes.filter(c=>!c.baja);
+  const venc=act.filter(c=>estado(c)==='vencidos');
+  const pv=act.filter(c=>estado(c)==='porvencer');
+  document.getElementById('kpis').innerHTML=`
+    <div class="kpi"><div class="et">Clientes activos</div><div class="val">${act.length}</div>
+      <div class="pie">${clientes.length-act.length} dado${clientes.length-act.length===1?'':'s'} de baja</div></div>
+    <div class="kpi"><div class="et">Facturación mensual</div><div class="val">${pesos(act.reduce((s,c)=>s+c.precio,0))}</div>
+      <div class="pie">Si todos pagan en fecha</div></div>
+    <div class="kpi ${venc.length?'alerta':''}"><div class="et">Hay que escribirles</div><div class="val">${venc.length+pv.length}</div>
+      <div class="pie">${venc.length} vencido${venc.length===1?'':'s'} · ${pv.length} por vencer</div></div>`;
+
+  document.getElementById('n-todos').textContent=act.length;
+  document.getElementById('n-dia').textContent=act.filter(c=>estado(c)==='dia').length;
+  document.getElementById('n-porvencer').textContent=pv.length;
+  document.getElementById('n-vencidos').textContent=venc.length;
+  document.getElementById('n-baja').textContent=clientes.length-act.length;
+
+  ['nombre','clave','precio','vence','visto'].forEach(k=>{
+    document.getElementById('fl-'+k).textContent=orden===k?(asc?'▲':'▼'):'';
+  });
+
+  const P={dia:'p-verde',porvencer:'p-amar',vencidos:'p-rojo',baja:'p-gris'};
+  document.getElementById('filas').innerHTML=l.map(c=>`
+    <tr onclick="verFicha(${c.id})" class="${c.baja?'apagado':''}">
+      <td class="c-nom"><span class="nom"><span class="punto ${P[estado(c)]}"></span>${esc(c.nombre)}</span></td>
+      <td class="c-clave"><span class="clave">${esc(c.clave)}</span></td>
+      <td class="der c-monto"><span class="monto">${pesos(c.precio)}</span></td>
+      <td class="c-venc">${textoVence(c)}</td>
+      <td class="c-visto">${textoVisto(c)}</td>
+      <td class="der c-acc"><div class="acc" onclick="event.stopPropagation()">
+        ${c.baja
+          ? `<button class="btn btn-mini" onclick="reactivar(${c.id})">Reactivar</button>`
+          : `<button class="btn btn-pri btn-mini" onclick="marcarPago(${c.id})">Pagó</button>
+             <button class="btn btn-mini btn-peli" onclick="darBaja(${c.id})">Baja</button>`}
+      </div></td>
+    </tr>`).join('');
+
+  const v=document.getElementById('vacio');
+  if(!l.length){
+    v.style.display='block';
+    v.innerHTML=filtro==='vencidos'
+      ? '<b>Nadie debe nada</b>Todos los clientes están al día.'
+      : filtro==='baja'
+      ? '<b>Nadie dado de baja</b>Los clientes que des de baja quedan archivados acá con su historial.'
+      : '<b>No hay clientes para mostrar</b>Probá con otro filtro o tocá "+ Nuevo cliente".';
+  }else v.style.display='none';
+}
+function esc(s){return (''+s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+
+// ===== acciones =====
+// Los 30 días se suman al vencimiento anterior, no a hoy: si paga tarde,
+// no se gana los días de atraso.
+async function marcarPago(id){
+  const c=clientes.find(x=>x.id===id);
+  if(demo){
+    const atraso=diasPara(c.vence);
+    c.vence=atraso<-15?hoyMas(30):(()=>{const d=new Date(c.vence+'T00:00:00');d.setDate(d.getDate()+30);return d.toISOString().slice(0,10)})();
+    c.pagos.unshift({f:HOY.toISOString().slice(0,10),m:c.precio});
+    c.baja=false;
+    pintar();if(verId===id)verFicha(id);return;
+  }
+  try{
+    const j=await api('/admin/pago',{id});
+    Object.assign(c,j.cliente);errorBanner('');
+    pintar();if(verId===id)verFicha(id);
+  }catch(err){errorBanner('No se pudo registrar el pago: '+err.message+'. <b>Probá de nuevo.</b>')}
+}
+async function darBaja(id){
+  const c=clientes.find(x=>x.id===id);
+  if(!confirm(`¿Dar de baja a ${c.nombre}?\n\nDeja de poder usar la app, pero NO se borra: queda archivado con todo su historial y lo podés reactivar cuando quieras.\n\nSus datos del campo no se tocan, viven en su computadora.`))return;
+  if(demo){c.baja=true;pintar();cerrarFicha();return}
+  try{const j=await api('/admin/baja',{id});Object.assign(c,j.cliente);errorBanner('');pintar();cerrarFicha()}
+  catch(err){errorBanner('No se pudo dar de baja: '+err.message)}
+}
+async function reactivar(id){
+  const c=clientes.find(x=>x.id===id);
+  if(demo){c.baja=false;if(diasPara(c.vence)<0)c.vence=hoyMas(30);pintar();cerrarFicha();return}
+  try{const j=await api('/admin/reactivar',{id});Object.assign(c,j.cliente);errorBanner('');pintar();cerrarFicha()}
+  catch(err){errorBanner('No se pudo reactivar: '+err.message)}
+}
+function copiar(txt,btn){
+  navigator.clipboard.writeText(txt).then(()=>{
+    const o=btn.textContent;btn.textContent='✓ Copiado';
+    setTimeout(()=>btn.textContent=o,1400);
+  }).catch(()=>alert(txt));
+}
+function mandarWA(id){
+  const c=clientes.find(x=>x.id===id);
+  const t=encodeURIComponent(`Hola ${c.nombre.split(' ')[0]}! Tu clave para Gestión del Campo es:\n\n${c.clave}\n\nEntrá a gestioncampo.com, pegala una vez y listo. Cualquier cosa avisame.`);
+  window.open('https://wa.me/?text='+t,'_blank');
+}
+
+// ===== ficha =====
+function verFicha(id){
+  const c=clientes.find(x=>x.id===id);
+  verId=id;
+  const d=diasPara(c.vence);
+  const dv=-diasPara(c.visto);
+  let avisos='';
+  if(c.baja)avisos+='<div class="aviso a-rojo"><span>⛔</span><div><b>Dado de baja.</b> No puede usar la app. Sus datos siguen intactos en su computadora.</div></div>';
+  else if(d<0)avisos+=`<div class="aviso a-rojo"><span>⚠️</span><div><b>Debe ${-d} día${d===-1?'':'s'}.</b> Escribile antes de dar de baja: casi siempre es olvido, no mala fe.</div></div>`;
+  else if(d<=7)avisos+=`<div class="aviso a-amar"><span>📅</span><div>Le vence en ${d} día${d===1?'':'s'}. Buen momento para recordarle.</div></div>`;
+  if(dv>=14&&!c.baja)avisos+=`<div class="aviso a-amar"><span>📉</span><div><b>Hace ${dv} días que no abre la app.</b> Aunque esté pagando, este es el que se da de baja el mes que viene. Llamalo.</div></div>`;
+  if(c.equipos>=3)avisos+=`<div class="aviso a-cielo"><span>💻</span><div>Se usa desde <b>${c.equipos} equipos distintos</b>. Puede ser que tenga la app en el campo y en la casa, o que haya compartido la clave.</div></div>`;
+
+  document.getElementById('ficha').innerHTML=`
+    <div class="ficha-top">
+      <span class="punto ${{dia:'p-verde',porvencer:'p-amar',vencidos:'p-rojo',baja:'p-gris'}[estado(c)]}" style="width:12px;height:12px;margin-top:7px"></span>
+      <h2>${esc(c.nombre)}</h2>
+      <button class="cerrar" onclick="cerrarFicha()">×</button>
+    </div>
+    <div class="ficha-cuerpo">
+      ${avisos}
+      <div class="dato"><span class="k">Clave</span><span class="v"><span class="clave">${esc(c.clave)}</span></span></div>
+      <div class="dato"><span class="k">Contacto</span><span class="v">${esc(c.tel)}</span></div>
+      <div class="dato"><span class="k">Precio por mes</span><span class="v">${pesos(c.precio)}</span></div>
+      <div class="dato"><span class="k">Paga hasta</span><span class="v">${aFecha(c.vence)}</span></div>
+      <div class="dato"><span class="k">Cliente desde</span><span class="v">${aFecha(c.alta)}</span></div>
+      <div class="dato"><span class="k">Última vez que entró</span><span class="v">${dv<=0?'Hoy':dv===1?'Ayer':'Hace '+dv+' días'}</span></div>
+      <div class="dato"><span class="k">Equipos donde la usa</span><span class="v">${c.equipos}</span></div>
+      <div class="dato"><span class="k">Total cobrado</span><span class="v">${pesos(c.pagos.reduce((s,p)=>s+p.m,0))}</span></div>
+
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px">
+        <button class="btn btn-mini" onclick="copiar('${c.clave}',this)">📋 Copiar clave</button>
+        <button class="btn btn-mini" onclick="mandarWA(${c.id})">💬 Mandar por WhatsApp</button>
+        ${c.baja?`<button class="btn btn-pri btn-mini" onclick="reactivar(${c.id})">Reactivar</button>`
+                :`<button class="btn btn-pri btn-mini" onclick="marcarPago(${c.id})">Registrar pago</button>`}
+      </div>
+
+      <div class="subt">Historial de pagos (${c.pagos.length})</div>
+      ${c.pagos.map(p=>`<div class="hist"><span>${aFecha(p.f)}</span><span>${pesos(p.m)}</span></div>`).join('')}
+    </div>`;
+  document.getElementById('velo-ficha').classList.add('on');
+}
+function cerrarFicha(){document.getElementById('velo-ficha').classList.remove('on');verId=null}
+
+// ===== alta =====
+function abrirAlta(){
+  document.getElementById('velo-alta').classList.add('on');
+  document.getElementById('a-nom').value='';
+  document.getElementById('a-tel').value='';
+  document.getElementById('alta-err').style.display='none';
+  setTimeout(()=>document.getElementById('a-nom').focus(),50);
+}
+function cerrarAlta(){document.getElementById('velo-alta').classList.remove('on')}
+async function guardarAlta(){
+  const n=document.getElementById('a-nom').value.trim();
+  const t=document.getElementById('a-tel').value.trim();
+  const p=parseInt((document.getElementById('a-precio').value||'').replace(/\D/g,''))||0;
+  const e=document.getElementById('alta-err');
+  if(!n){e.textContent='Falta el nombre del cliente.';e.style.display='block';return}
+  if(!p){e.textContent='Poné un precio por mes.';e.style.display='block';return}
+  if(demo){
+    const c={id:Date.now(),nombre:n,tel:t||'—',clave:nuevaClave(),precio:p,
+      vence:hoyMas(30),alta:HOY.toISOString().slice(0,10),visto:hoyMas(0),equipos:0,baja:false,pagos:[]};
+    clientes.push(c);cerrarAlta();pintar();verFicha(c.id);return;
+  }
+  const btn=document.querySelector('#velo-alta .btn-pri');
+  btn.disabled=true;btn.textContent='Creando...';
+  try{
+    const j=await api('/admin/alta',{nombre:n,tel:t,precio:p});
+    clientes.push(j.cliente);errorBanner('');
+    cerrarAlta();pintar();verFicha(j.cliente.id);
+  }catch(err){e.textContent='No se pudo crear: '+err.message;e.style.display='block'}
+  finally{btn.disabled=false;btn.textContent='Dar de alta'}
+}
+
+if(demo){
+  document.querySelector('.caja-login p').innerHTML='Gestión del Campo<br><span style="font-size:12px;color:var(--tinta-3)">Modo prueba · clave: campo · <a href="#" onclick="pedirWorker();return false">configurar servidor</a></span>';
+}
+document.getElementById('clave').focus();
+</script>
+</body>
+</html>
