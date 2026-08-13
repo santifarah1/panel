@@ -50,6 +50,7 @@ main{max-width:1120px;margin:0 auto;padding:22px 22px 70px}
 .btn{font-family:inherit;font-size:14px;font-weight:500;border-radius:10px;padding:9px 15px;
   border:1px solid var(--borde-vivo);background:var(--tarjeta);color:var(--tinta);cursor:pointer;
   transition:background .12s;white-space:nowrap;min-height:38px}
+.btn{text-decoration:none}
 .btn:hover{background:var(--lienzo)}
 .btn-pri{background:var(--campo-hondo);border-color:var(--campo-hondo);color:#fff}
 .btn-pri:hover{background:var(--campo)}
@@ -131,6 +132,41 @@ tbody tr:hover{background:#FAF7F0}
   border-radius:10px;background:#fff;color:var(--tinta);margin-bottom:13px;min-height:42px}
 .inp:focus{outline:2px solid var(--campo);outline-offset:-1px}
 .inp.num{font-variant-numeric:tabular-nums}
+.cal-top{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--borde)}
+.cal-top b{font-family:"Space Grotesk",sans-serif;font-size:16px;font-weight:600;min-width:150px}
+.cal-top b::first-letter{text-transform:uppercase}
+.cal-dias{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;padding:10px 12px 4px}
+.cal-dias span{font-size:10.5px;font-weight:650;letter-spacing:.07em;text-transform:uppercase;
+  color:var(--tinta-3);text-align:center}
+.cal-grilla{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px;padding:4px 12px 14px}
+.cal-celda{min-height:78px;border:1px solid var(--borde);border-radius:9px;padding:6px 7px;
+  background:var(--tarjeta);display:flex;flex-direction:column;gap:3px}
+.cal-celda.fuera{background:transparent;border-color:transparent}
+.cal-celda.hoy{border-color:var(--campo);box-shadow:0 0 0 2px var(--campo-suave)}
+.cal-num{font-size:11.5px;color:var(--tinta-3);font-variant-numeric:tabular-nums}
+.cal-celda.hoy .cal-num{color:var(--campo-hondo);font-weight:700}
+.cal-ev{font-size:11px;line-height:1.25;border-radius:5px;padding:3px 5px;cursor:pointer;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border:1px solid transparent}
+.cal-ev.rojo{background:var(--ladrillo-suave);color:#7A3A26;border-color:#E0BFB0}
+.cal-ev.amar{background:var(--trigo-suave);color:#6B5318;border-color:#E0CB96}
+.cal-ev.verde{background:var(--campo-suave);color:var(--campo-hondo);border-color:#BFD1A4}
+.cal-ev:hover{filter:brightness(.96)}
+.cal-mas{font-size:10.5px;color:var(--tinta-3);padding-left:5px}
+.cal-pie{display:flex;gap:16px;flex-wrap:wrap;padding:0 16px 14px;font-size:12px;color:var(--tinta-2)}
+.cal-pie span{display:flex;align-items:center;gap:6px}
+.cal-pie i{width:9px;height:9px;border-radius:50%;display:block}
+.cal-pie i.p-rojo{background:var(--ladrillo)}
+.cal-pie i.p-amar{background:var(--trigo)}
+.cal-pie i.p-verde{background:var(--campo)}
+@media(max-width:700px){
+  .cal-celda{min-height:56px;padding:4px 4px}
+  .cal-ev{font-size:9.5px;padding:2px 3px}
+  .cal-grilla{gap:3px;padding:4px 8px 12px}
+  .cal-dias{padding:10px 8px 4px}
+}
+.mini-ayuda{font-size:12.5px;color:var(--tinta-3);margin:-8px 0 14px;line-height:1.45}
+.atajos{display:flex;gap:7px;flex-wrap:wrap;margin:-4px 0 16px}
+.atajos .btn{font-size:12.5px;padding:6px 11px;min-height:34px}
 .demo{background:var(--cielo-suave);border:1px solid #BFCEDD;color:#31506B;border-radius:11px;
   padding:11px 15px;font-size:13.5px;margin-bottom:18px;display:flex;gap:9px;align-items:flex-start}
 
@@ -220,9 +256,28 @@ tbody tr:hover{background:#FAF7F0}
       <button class="chip" data-f="vencidos" onclick="filtrar('vencidos')">Vencidos <span class="n" id="n-vencidos"></span></button>
       <button class="chip" data-f="baja" onclick="filtrar('baja')">De baja <span class="n" id="n-baja"></span></button>
       <input class="buscador" id="buscar" type="search" placeholder="Buscar por nombre o clave..." oninput="pintar()">
+      <button class="chip" id="btn-vista" onclick="alternarVista()">📅 Calendario</button>
     </div>
 
-    <div class="panel">
+    <div class="panel" id="panel-cal" style="display:none">
+      <div class="cal-top">
+        <button class="btn btn-mini" onclick="moverMes(-1)" aria-label="Mes anterior">‹</button>
+        <b id="cal-titulo"></b>
+        <button class="btn btn-mini" onclick="moverMes(1)" aria-label="Mes siguiente">›</button>
+        <button class="btn btn-mini" onclick="mesHoy()" style="margin-left:auto">Hoy</button>
+      </div>
+      <div class="cal-dias" id="cal-dias" aria-hidden="true">
+        <span>Lu</span><span>Ma</span><span>Mi</span><span>Ju</span><span>Vi</span><span>Sá</span><span>Do</span>
+      </div>
+      <div class="cal-grilla" id="cal-grilla"></div>
+      <div class="cal-pie">
+        <span><i class="p-rojo"></i> Vencido</span>
+        <span><i class="p-amar"></i> Vence pronto</span>
+        <span><i class="p-verde"></i> Al día</span>
+      </div>
+    </div>
+
+    <div class="panel" id="panel-lista">
       <table>
         <thead><tr>
           <th onclick="ordenar('nombre')">Cliente <span class="fl" id="fl-nombre"></span></th>
@@ -237,6 +292,35 @@ tbody tr:hover{background:#FAF7F0}
       <div class="vacio" id="vacio" style="display:none"></div>
     </div>
   </main>
+</div>
+
+<!-- ===== EDITAR ===== -->
+<div class="velo" id="velo-editar" onclick="if(event.target===this)cerrarEditar()">
+  <div class="ficha">
+    <div class="ficha-top">
+      <h2>Editar cliente</h2>
+      <button class="cerrar" onclick="cerrarEditar()">×</button>
+    </div>
+    <div class="ficha-cuerpo">
+      <label class="campo-l" for="e-nom">Nombre y apellido</label>
+      <input class="inp" id="e-nom" enterkeyhint="next">
+      <label class="campo-l" for="e-tel">Teléfono o contacto</label>
+      <input class="inp" id="e-tel" inputmode="tel" enterkeyhint="next">
+      <label class="campo-l" for="e-precio">Precio por mes</label>
+      <input class="inp num" id="e-precio" inputmode="numeric" enterkeyhint="next">
+      <p class="mini-ayuda">Poné <b>0</b> si es una cuenta gratis: no suma a la facturación ni aparece en los avisos.</p>
+      <label class="campo-l" for="e-vence">Paga hasta</label>
+      <input class="inp" id="e-vence" type="date" enterkeyhint="done">
+      <div class="atajos">
+        <button class="btn btn-mini" onclick="atajoVence(30)">+30 días</button>
+        <button class="btn btn-mini" onclick="atajoVence(90)">+3 meses</button>
+        <button class="btn btn-mini" onclick="atajoVence(365)">+1 año</button>
+        <button class="btn btn-mini" onclick="atajoVence('cortesia')">Sin vencimiento</button>
+      </div>
+      <div id="editar-err" style="display:none;color:var(--ladrillo);font-size:13px;margin:-4px 0 12px"></div>
+      <button class="btn btn-pri" style="width:100%" onclick="guardarEdicion()">Guardar cambios</button>
+    </div>
+  </div>
 </div>
 
 <!-- ===== FICHA ===== -->
@@ -474,6 +558,8 @@ function pintar(){
       </div></td>
     </tr>`).join('');
 
+  if(vistaCal)pintarCal();
+
   const v=document.getElementById('vacio');
   if(!l.length){
     v.style.display='block';
@@ -485,6 +571,81 @@ function pintar(){
   }else v.style.display='none';
 }
 function esc(s){return (''+s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+
+// Borrado definitivo, sin vuelta atrás. Sirve para limpiar pruebas.
+// Para un cliente real casi siempre lo correcto es "Baja", que lo archiva
+// con su historial y permite reactivarlo.
+async function eliminarCliente(id){
+  const c=clientes.find(x=>x.id===id);
+  if(!c)return;
+  if(!confirm(`⚠️ ELIMINAR a ${c.nombre} para siempre\n\nSe borra el cliente, su clave y todo su historial de pagos. NO se puede deshacer.\n\nSi sólo querés que deje de usar la app, cerrá esto y usá "Baja": queda archivado y lo podés reactivar.\n\n¿Eliminar igual?`))return;
+  const r=prompt(`Para confirmar, escribí el nombre tal cual:\n\n${c.nombre}`);
+  if(r===null)return;
+  if(r.trim()!==c.nombre){alert('El nombre no coincide. No se eliminó nada.');return}
+  if(demo){clientes=clientes.filter(x=>x.id!==id);pintar();cerrarFicha();return}
+  try{
+    await api('/admin/borrar',{id});
+    clientes=clientes.filter(x=>x.id!==id);
+    errorBanner('');pintar();cerrarFicha();
+  }catch(err){errorBanner('No se pudo eliminar: '+err.message)}
+}
+
+// ===== CALENDARIO DE VENCIMIENTOS =====
+// Sirve para ver de un vistazo cómo viene el mes: quién vence cuándo y si se
+// te juntan varios el mismo día.
+let vistaCal=false;
+let calMes=new Date(HOY.getFullYear(),HOY.getMonth(),1);
+
+function alternarVista(){
+  vistaCal=!vistaCal;
+  document.getElementById('btn-vista').innerHTML=vistaCal?'☰ Lista':'📅 Calendario';
+  document.getElementById('btn-vista').classList.toggle('on',vistaCal);
+  document.getElementById('panel-cal').style.display=vistaCal?'block':'none';
+  document.getElementById('panel-lista').style.display=vistaCal?'none':'block';
+  pintar();
+}
+function moverMes(n){calMes=new Date(calMes.getFullYear(),calMes.getMonth()+n,1);pintarCal()}
+function mesHoy(){calMes=new Date(HOY.getFullYear(),HOY.getMonth(),1);pintarCal()}
+
+function pintarCal(){
+  const g=document.getElementById('cal-grilla');
+  if(!g)return;
+  const a=calMes.getFullYear(), m=calMes.getMonth();
+  document.getElementById('cal-titulo').textContent=
+    calMes.toLocaleDateString('es-AR',{month:'long',year:'numeric'});
+
+  // Los vencimientos del mes, agrupados por día. Las cuentas de cortesía
+  // (sin vencimiento real) no van al calendario: ensucian y no hay que cobrarlas.
+  const porDia={};
+  clientes.filter(c=>!c.baja&&c.precio>0&&diasPara(c.vence)<=1825).forEach(c=>{
+    const p=(c.vence||'').split('-');
+    if(p.length!==3)return;
+    if(+p[0]!==a||+p[1]!==m+1)return;
+    const d=+p[2];
+    (porDia[d]=porDia[d]||[]).push(c);
+  });
+
+  // Lunes primero, como el calendario de acá.
+  const primero=new Date(a,m,1);
+  let arranque=primero.getDay()-1; if(arranque<0)arranque=6;
+  const ultimo=new Date(a,m+1,0).getDate();
+  const hoyISO=HOY.toISOString().slice(0,10);
+
+  let html='';
+  for(let i=0;i<arranque;i++)html+='<div class="cal-celda fuera"></div>';
+  for(let d=1;d<=ultimo;d++){
+    const iso=a+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    const evs=porDia[d]||[];
+    const dd=diasPara(iso);
+    const clase=dd<0?'rojo':dd<=7?'amar':'verde';
+    html+=`<div class="cal-celda${iso===hoyISO?' hoy':''}">
+      <span class="cal-num">${d}</span>
+      ${evs.slice(0,3).map(c=>`<span class="cal-ev ${clase}" onclick="verFicha(${c.id})" title="${esc(c.nombre)} · ${pesos(c.precio)}">${esc(c.nombre)}</span>`).join('')}
+      ${evs.length>3?`<span class="cal-mas">+${evs.length-3} más</span>`:''}
+    </div>`;
+  }
+  g.innerHTML=html;
+}
 
 // ===== acciones =====
 // Los 30 días se suman al vencimiento anterior, no a hoy: si paga tarde,
@@ -531,46 +692,50 @@ function mandarWA(id){
 
 // Editar datos y vencimiento. Sirve sobre todo para las cuentas de cortesía:
 // se les pone un vencimiento lejano y no vuelven a aparecer como vencidas.
-async function editarCliente(id){
+let editandoId=null;
+function editarCliente(id){
   const c=clientes.find(x=>x.id===id);
   if(!c)return;
-  const nombre=prompt('Nombre:',c.nombre);
-  if(nombre===null)return;
-  const tel=prompt('Teléfono o contacto:',c.tel==='—'?'':c.tel);
-  if(tel===null)return;
-  const precio=prompt('Precio por mes (sólo números).\n\nPoné 0 si es una cuenta gratis.',c.precio);
-  if(precio===null)return;
-  const vence=prompt('Paga hasta (AAAA-MM-DD).\n\nPara una cuenta gratis de por vida poné: 2099-12-31',c.vence);
-  if(vence===null)return;
-  const v=(vence||'').trim();
-  if(!/^\d{4}-\d{2}-\d{2}$/.test(v)){alert('La fecha tiene que ser tipo 2099-12-31 (año-mes-día).');return}
-  const datos={id,nombre:(nombre||'').trim()||c.nombre,tel:(tel||'').trim(),
-    precio:(()=>{const t=(''+precio).replace(/\D/g,'');const n=t===''?NaN:parseInt(t);return isNaN(n)?c.precio:n})(),
-    vence:v};
-  if(demo){Object.assign(c,datos);pintar();verFicha(id);return}
+  editandoId=id;
+  document.getElementById('e-nom').value=c.nombre;
+  document.getElementById('e-tel').value=c.tel==='—'?'':c.tel;
+  document.getElementById('e-precio').value=c.precio;
+  document.getElementById('e-vence').value=c.vence||'';
+  document.getElementById('editar-err').style.display='none';
+  document.getElementById('velo-editar').classList.add('on');
+  setTimeout(()=>document.getElementById('e-nom').focus(),60);
+}
+function cerrarEditar(){document.getElementById('velo-editar').classList.remove('on');editandoId=null}
+// Atajos para no tener que contar días a mano en el calendario.
+function atajoVence(n){
+  if(n==='cortesia'){document.getElementById('e-vence').value='2099-12-31';return}
+  const base=document.getElementById('e-vence').value||hoyMas(0);
+  const d=new Date(base+'T00:00:00');
+  d.setDate(d.getDate()+n);
+  document.getElementById('e-vence').value=d.toISOString().slice(0,10);
+}
+async function guardarEdicion(){
+  const c=clientes.find(x=>x.id===editandoId);
+  if(!c)return;
+  const e=document.getElementById('editar-err');
+  const nombre=document.getElementById('e-nom').value.trim();
+  const tel=document.getElementById('e-tel').value.trim();
+  const pTxt=document.getElementById('e-precio').value.replace(/\D/g,'');
+  const precio=pTxt===''?NaN:parseInt(pTxt);
+  const vence=document.getElementById('e-vence').value;
+  if(!nombre){e.textContent='Falta el nombre.';e.style.display='block';return}
+  if(isNaN(precio)||precio<0){e.textContent='Poné un precio por mes (0 si es gratis).';e.style.display='block';return}
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(vence)){e.textContent='Elegí hasta cuándo tiene la cuenta paga.';e.style.display='block';return}
+  const datos={id:editandoId,nombre,tel,precio,vence};
+  if(demo){Object.assign(c,datos);cerrarEditar();pintar();verFicha(datos.id);return}
+  const btn=document.querySelector('#velo-editar .btn-pri');
+  btn.disabled=true;btn.textContent='Guardando...';
   try{
     const j=await api('/admin/editar',datos);
     Object.assign(c,j.cliente);errorBanner('');
-    pintar();verFicha(id);
-  }catch(err){errorBanner('No se pudo guardar el cambio: '+err.message)}
-}
-
-// Borrado definitivo, sin vuelta atrás. Sirve para limpiar pruebas.
-// Para un cliente real casi siempre lo correcto es "Baja", que lo archiva
-// con su historial y permite reactivarlo.
-async function eliminarCliente(id){
-  const c=clientes.find(x=>x.id===id);
-  if(!c)return;
-  if(!confirm(`⚠️ ELIMINAR a ${c.nombre} para siempre\n\nSe borra el cliente, su clave y todo su historial de pagos. NO se puede deshacer.\n\nSi sólo querés que deje de usar la app, cerrá esto y usá "Baja": queda archivado y lo podés reactivar.\n\n¿Eliminar igual?`))return;
-  const r=prompt(`Para confirmar, escribí el nombre tal cual:\n\n${c.nombre}`);
-  if(r===null)return;
-  if(r.trim()!==c.nombre){alert('El nombre no coincide. No se eliminó nada.');return}
-  if(demo){clientes=clientes.filter(x=>x.id!==id);pintar();cerrarFicha();return}
-  try{
-    await api('/admin/borrar',{id});
-    clientes=clientes.filter(x=>x.id!==id);
-    errorBanner('');pintar();cerrarFicha();
-  }catch(err){errorBanner('No se pudo eliminar: '+err.message)}
+    cerrarEditar();pintar();verFicha(datos.id);
+  }catch(err){e.textContent='No se pudo guardar: '+err.message;e.style.display='block'}
+  finally{btn.disabled=false;btn.textContent='Guardar cambios'}
 }
 
 // ===== ficha =====
