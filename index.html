@@ -54,6 +54,7 @@ main{max-width:1120px;margin:0 auto;padding:22px 22px 70px}
 .btn-pri{background:var(--campo-hondo);border-color:var(--campo-hondo);color:#fff}
 .btn-pri:hover{background:var(--campo)}
 .btn-mini{padding:6px 11px;font-size:13px;min-height:32px}
+.btn-ico-salir{display:none}
 .btn-peli{color:var(--ladrillo)}
 .btn-peli:hover{background:var(--ladrillo-suave)}
 
@@ -136,6 +137,16 @@ tbody tr:hover{background:#FAF7F0}
 /* ===== MOBILE ===== */
 /* En celular todo lo que se toca necesita 44x44 como mínimo: con menos,
    se le erra con el dedo. Pasaba con "Pagó" y "Baja" en cada fila. */
+/* En celular la barra no entra con cuatro botones: los textos se ocultan y
+   quedan sólo los íconos. */
+@media(max-width:620px){
+  .topbar{padding:0 12px}
+  .topbar .der{gap:6px}
+  .topbar h1{font-size:15px}
+  .btn-txt{display:none}
+  .btn-ico-salir{display:inline}
+  .der .btn{padding:8px 11px}
+}
 @media(pointer:coarse){
   .btn{min-height:44px}
   .btn-mini{min-height:44px;padding:9px 15px}
@@ -184,9 +195,10 @@ tbody tr:hover{background:#FAF7F0}
     <div class="logo">C</div>
     <h1>Panel de clientes</h1>
     <div class="der">
-      <button class="btn btn-pri btn-mini" onclick="abrirAlta()">+ Nuevo cliente</button>
+      <button class="btn btn-pri btn-mini" onclick="abrirAlta()" title="Nuevo cliente">+<span class="btn-txt"> Nuevo cliente</span></button>
+      <a class="btn btn-mini" href="https://gestioncampo.com/app.html" target="_blank" rel="noopener" title="Abrir la app de gestión"><span class="btn-txt">Ir a la app </span>↗</a>
       <button class="btn btn-mini" onclick="recargar()" title="Actualizar">↻</button>
-      <button class="btn btn-mini" onclick="salir()">Salir</button>
+      <button class="btn btn-mini" onclick="salir()" title="Salir"><span class="btn-txt">Salir</span><span class="btn-ico-salir" aria-hidden="true">⏻</span></button>
     </div>
   </div>
 
@@ -543,6 +555,24 @@ async function editarCliente(id){
   }catch(err){errorBanner('No se pudo guardar el cambio: '+err.message)}
 }
 
+// Borrado definitivo, sin vuelta atrás. Sirve para limpiar pruebas.
+// Para un cliente real casi siempre lo correcto es "Baja", que lo archiva
+// con su historial y permite reactivarlo.
+async function eliminarCliente(id){
+  const c=clientes.find(x=>x.id===id);
+  if(!c)return;
+  if(!confirm(`⚠️ ELIMINAR a ${c.nombre} para siempre\n\nSe borra el cliente, su clave y todo su historial de pagos. NO se puede deshacer.\n\nSi sólo querés que deje de usar la app, cerrá esto y usá "Baja": queda archivado y lo podés reactivar.\n\n¿Eliminar igual?`))return;
+  const r=prompt(`Para confirmar, escribí el nombre tal cual:\n\n${c.nombre}`);
+  if(r===null)return;
+  if(r.trim()!==c.nombre){alert('El nombre no coincide. No se eliminó nada.');return}
+  if(demo){clientes=clientes.filter(x=>x.id!==id);pintar();cerrarFicha();return}
+  try{
+    await api('/admin/borrar',{id});
+    clientes=clientes.filter(x=>x.id!==id);
+    errorBanner('');pintar();cerrarFicha();
+  }catch(err){errorBanner('No se pudo eliminar: '+err.message)}
+}
+
 // ===== ficha =====
 function verFicha(id){
   const c=clientes.find(x=>x.id===id);
@@ -580,6 +610,7 @@ function verFicha(id){
         ${c.baja?`<button class="btn btn-pri btn-mini" onclick="reactivar(${c.id})">Reactivar</button>`
                 :`<button class="btn btn-pri btn-mini" onclick="marcarPago(${c.id})">Registrar pago</button>`}
         <button class="btn btn-mini" onclick="editarCliente(${c.id})">✎ Editar</button>
+        <button class="btn btn-mini btn-peli" onclick="eliminarCliente(${c.id})">Eliminar</button>
       </div>
 
       <div class="subt">Historial de pagos (${c.pagos.length})</div>
