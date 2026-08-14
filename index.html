@@ -98,6 +98,8 @@ tbody tr:hover{background:#FAF7F0}
 .p-verde{background:var(--campo)}.p-amar{background:var(--trigo)}
 .p-rojo{background:var(--ladrillo)}.p-gris{background:#B5AC9B}
 .clave{font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:12.5px;color:var(--tinta-2);letter-spacing:.02em;white-space:nowrap}
+.mail{font-size:13px;color:var(--tinta-2);word-break:break-all}
+.c-mail{max-width:200px}
 .monto{font-variant-numeric:tabular-nums;font-weight:600;white-space:nowrap}
 .venc{font-variant-numeric:tabular-nums;white-space:nowrap}
 .venc b{font-weight:600}
@@ -203,7 +205,9 @@ tbody tr:hover{background:#FAF7F0}
   tbody tr{display:block;padding:13px 15px;border-bottom:1px solid #EFE9DC}
   td{display:block;padding:0;border:none}
   td.c-nom{margin-bottom:3px}
-  td.c-clave{margin-bottom:9px}
+  td.c-clave{margin-bottom:3px}
+  td.c-mail{margin-bottom:9px}
+  td.c-mail .mail{font-size:12.5px;color:var(--tinta-3)}
   td.c-monto{display:inline-block;margin-right:12px}
   td.c-venc{display:inline-block}
   td.c-acc{margin-top:11px}
@@ -285,6 +289,7 @@ tbody tr:hover{background:#FAF7F0}
         <thead><tr>
           <th onclick="ordenar('nombre')">Cliente <span class="fl" id="fl-nombre"></span></th>
           <th onclick="ordenar('clave')">Clave <span class="fl" id="fl-clave"></span></th>
+          <th>Correo</th>
           <th class="der" onclick="ordenar('precio')">Por mes <span class="fl" id="fl-precio"></span></th>
           <th onclick="ordenar('vence')">Vencimiento <span class="fl" id="fl-vence"></span></th>
           <th onclick="ordenar('visto')">Última vez <span class="fl" id="fl-visto"></span></th>
@@ -309,7 +314,7 @@ tbody tr:hover{background:#FAF7F0}
       <input class="inp" id="e-nom" enterkeyhint="next">
       <label class="campo-l" for="e-tel">Teléfono o contacto</label>
       <input class="inp" id="e-tel" inputmode="tel" enterkeyhint="next">
-      <label class="campo-l" for="e-mail">Correo de Google <span style="font-weight:400;color:var(--tinta-3)">(para el respaldo en Drive)</span></label>
+      <label class="campo-l" for="e-mail">Correo <span style="font-weight:400;color:var(--tinta-3)">(opcional)</span></label>
       <input class="inp" id="e-mail" type="email" inputmode="email" autocapitalize="off" placeholder="juan@gmail.com" enterkeyhint="next">
       <label class="campo-l" for="e-precio">Precio por mes</label>
       <input class="inp num" id="e-precio" inputmode="numeric" enterkeyhint="next">
@@ -345,7 +350,7 @@ tbody tr:hover{background:#FAF7F0}
       <input class="inp" id="a-nom" placeholder="Juan Pérez" enterkeyhint="next">
       <label class="campo-l" for="a-tel">Teléfono o contacto</label>
       <input class="inp" id="a-tel" inputmode="tel" placeholder="11 5555-5555" enterkeyhint="next">
-      <label class="campo-l" for="a-mail">Correo de Google <span style="font-weight:400;color:var(--tinta-3)">(para el respaldo en Drive)</span></label>
+      <label class="campo-l" for="a-mail">Correo <span style="font-weight:400;color:var(--tinta-3)">(opcional)</span></label>
       <input class="inp" id="a-mail" type="email" inputmode="email" autocapitalize="off" placeholder="juan@gmail.com" enterkeyhint="next">
       <label class="campo-l" for="a-precio">Precio por mes</label>
       <input class="inp num" id="a-precio" inputmode="numeric" value="35000" enterkeyhint="done">
@@ -531,11 +536,19 @@ function pintar(){
   const act=clientes.filter(c=>!c.baja);
   const venc=act.filter(c=>estado(c)==='vencidos');
   const pv=act.filter(c=>estado(c)==='porvencer');
+  // Lo COBRADO este mes: suma de los pagos registrados cuya fecha cae en el
+  // mes actual. No es lo mismo que el potencial (todos los activos por su
+  // precio): esto es la plata que efectivamente entró.
+  const mesActual=HOY.toISOString().slice(0,7);   // 'AAAA-MM'
+  const cobrado=clientes.reduce((s,c)=>s+(c.pagos||[])
+    .filter(p=>('' +p.f).slice(0,7)===mesActual)
+    .reduce((ss,p)=>ss+(p.m||0),0),0);
+  const potencial=act.reduce((s,c)=>s+(c.precio||0),0);
   document.getElementById('kpis').innerHTML=`
     <div class="kpi"><div class="et">Clientes activos</div><div class="val">${act.length}</div>
       <div class="pie">${clientes.length-act.length} dado${clientes.length-act.length===1?'':'s'} de baja</div></div>
-    <div class="kpi"><div class="et">Facturación mensual</div><div class="val">${pesos(act.reduce((s,c)=>s+(c.precio||0),0))}</div>
-      <div class="pie">${(()=>{const g=act.filter(c=>!c.precio).length;return g?`${act.length-g} cliente${act.length-g===1?'':'s'} · ${g} gratis`:'Si todos pagan en fecha'})()}</div></div>
+    <div class="kpi"><div class="et">Cobrado este mes</div><div class="val">${pesos(cobrado)}</div>
+      <div class="pie">${potencial?`de ${pesos(potencial)} si cobrás a todos`:'sin clientes con precio'}</div></div>
     <div class="kpi ${venc.length?'alerta':''}"><div class="et">Hay que escribirles</div><div class="val">${venc.length+pv.length}</div>
       <div class="pie">${venc.length} vencido${venc.length===1?'':'s'} · ${pv.length} por vencer</div></div>`;
 
@@ -554,6 +567,7 @@ function pintar(){
     <tr onclick="verFicha(${c.id})" class="${c.baja?'apagado':''}">
       <td class="c-nom"><span class="nom"><span class="punto ${P[estado(c)]}"></span>${esc(c.nombre)}</span></td>
       <td class="c-clave"><span class="clave">${esc(c.clave)}</span></td>
+      <td class="c-mail">${c.mail?`<span class="mail">${esc(c.mail)}</span>`:'<span style="color:var(--tinta-3)">—</span>'}</td>
       <td class="der c-monto">${c.precio?`<span class="monto">${pesos(c.precio)}</span>`:'<span class="monto" style="color:var(--tinta-3);font-weight:500">Gratis</span>'}</td>
       <td class="c-venc">${textoVence(c)}</td>
       <td class="c-visto">${textoVisto(c)}</td>
@@ -821,7 +835,7 @@ function verFicha(id){
       ${avisos}
       <div class="dato"><span class="k">Clave</span><span class="v"><span class="clave">${esc(c.clave)}</span></span></div>
       <div class="dato"><span class="k">Contacto</span><span class="v">${esc(c.tel)}</span></div>
-      <div class="dato"><span class="k">Correo de Google</span><span class="v">${c.mail?esc(c.mail):'<span style="color:var(--tinta-3);font-weight:400">sin cargar</span>'}</span></div>
+      <div class="dato"><span class="k">Correo</span><span class="v">${c.mail?esc(c.mail):'<span style="color:var(--tinta-3);font-weight:400">sin cargar</span>'}</span></div>
       <div class="dato"><span class="k">Precio por mes</span><span class="v">${c.precio?pesos(c.precio):'Gratis'}</span></div>
       <div class="dato"><span class="k">Paga hasta</span><span class="v">${aFecha(c.vence)}</span></div>
       <div class="dato"><span class="k">Cliente desde</span><span class="v">${aFecha(c.alta)}</span></div>
@@ -831,7 +845,7 @@ function verFicha(id){
 
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px">
         <button class="btn btn-mini" onclick="copiar('${c.clave}',this)">📋 Copiar clave</button>
-        ${c.mail?`<button class="btn btn-mini" onclick="copiar('${esc(c.mail)}',this)" title="Para pegarlo en los usuarios de prueba de Google Cloud">📋 Copiar correo</button>`:''}
+        ${c.mail?`<button class="btn btn-mini" onclick="copiar('${esc(c.mail)}',this)">📋 Copiar correo</button>`:''}
         <button class="btn btn-mini" onclick="mandarWA(${c.id})">💬 Mandar por WhatsApp</button>
         <button class="btn btn-mini" onclick="copiarMensaje(${c.id},this)" title="Copiar el mensaje completo para pegarlo donde quieras">📋 Copiar mensaje</button>
         ${c.baja?`<button class="btn btn-pri btn-mini" onclick="reactivar(${c.id})">Reactivar</button>`
