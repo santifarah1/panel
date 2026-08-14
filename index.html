@@ -725,7 +725,8 @@ function sacar15(n){
 }
 // El mismo texto sirve para abrir WhatsApp o para copiarlo y pegarlo donde sea.
 function textoBienvenida(c){
-  return `Hola ${c.nombre.split(' ')[0]}! Tu clave para Gestión del Campo es:\n\n${c.clave}\n\nEntrá a gestioncampo.com, pegala una vez y listo. Cualquier cosa avisame.`;
+  const extra=c.mail?'':'\n\nUna cosa más: pasame tu correo cuando puedas, así lo tengo en tu ficha.';
+  return `Hola ${c.nombre.split(' ')[0]}! Tu clave para Gestión del Campo es:\n\n${c.clave}\n\nEntrá a gestioncampo.com, pegala una vez y listo. Cualquier cosa avisame.${extra}`;
 }
 function copiarMensaje(id,btn){
   const c=clientes.find(x=>x.id===id);
@@ -807,7 +808,7 @@ function verFicha(id){
   // Mientras la app no esté publicada en Google, cada cuenta hay que
   // autorizarla a mano para que pueda usar el respaldo en Drive.
   if(c.tel&&c.tel!=='—'&&!telWhatsApp(c.tel))avisos+='<div class="aviso a-amar"><span>📱</span><div><b>El teléfono no se entiende.</b> Al mandar el WhatsApp vas a tener que elegir el contacto a mano. Cargalo con característica, por ejemplo <b>2920 44-1188</b>.</div></div>';
-  if(!c.mail&&!c.baja)avisos+='<div class="aviso a-amar"><span>☁️</span><div><b>Falta el correo de Google.</b> Sin eso no lo podés autorizar para el respaldo en Drive: le va a decir "Acceso bloqueado". Tocá <b>✎ Editar</b> y cargalo.</div></div>';
+  if(!c.mail&&!c.baja)avisos+='<div class="aviso a-amar"><span>✉️</span><div><b>Falta el correo.</b> Convendría cargarlo para tenerlo en su ficha. Tocá <b>✎ Editar</b> y cargalo.</div></div>';
   if(c.equipos>=3)avisos+=`<div class="aviso a-cielo"><span>💻</span><div>Se usa desde <b>${c.equipos} equipos distintos</b>. Puede ser que tenga la app en el campo y en la casa, o que haya compartido la clave.</div></div>`;
 
   document.getElementById('ficha').innerHTML=`
