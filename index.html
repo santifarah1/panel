@@ -309,6 +309,8 @@ tbody tr:hover{background:#FAF7F0}
       <input class="inp" id="e-nom" enterkeyhint="next">
       <label class="campo-l" for="e-tel">Teléfono o contacto</label>
       <input class="inp" id="e-tel" inputmode="tel" enterkeyhint="next">
+      <label class="campo-l" for="e-mail">Correo de Google <span style="font-weight:400;color:var(--tinta-3)">(para el respaldo en Drive)</span></label>
+      <input class="inp" id="e-mail" type="email" inputmode="email" autocapitalize="off" placeholder="juan@gmail.com" enterkeyhint="next">
       <label class="campo-l" for="e-precio">Precio por mes</label>
       <input class="inp num" id="e-precio" inputmode="numeric" enterkeyhint="next">
       <p class="mini-ayuda">Poné <b>0</b> si es una cuenta gratis: no suma a la facturación ni aparece en los avisos.</p>
@@ -343,6 +345,8 @@ tbody tr:hover{background:#FAF7F0}
       <input class="inp" id="a-nom" placeholder="Juan Pérez" enterkeyhint="next">
       <label class="campo-l" for="a-tel">Teléfono o contacto</label>
       <input class="inp" id="a-tel" inputmode="tel" placeholder="11 5555-5555" enterkeyhint="next">
+      <label class="campo-l" for="a-mail">Correo de Google <span style="font-weight:400;color:var(--tinta-3)">(para el respaldo en Drive)</span></label>
+      <input class="inp" id="a-mail" type="email" inputmode="email" autocapitalize="off" placeholder="juan@gmail.com" enterkeyhint="next">
       <label class="campo-l" for="a-precio">Precio por mes</label>
       <input class="inp num" id="a-precio" inputmode="numeric" value="35000" enterkeyhint="done">
       <div id="alta-err" style="display:none;color:var(--ladrillo);font-size:13px;margin:-6px 0 12px"></div>
@@ -687,10 +691,55 @@ function copiar(txt,btn){
     setTimeout(()=>btn.textContent=o,1400);
   }).catch(()=>alert(txt));
 }
+// El teléfono lo cargás como te sale ("2920 44-1188") pero WhatsApp lo
+// necesita en un formato exacto: 54 + 9 + área + número, sin ceros, sin el 15
+// y sin separadores. Sin esto hay que buscar el contacto a mano, y si no está
+// agendado no aparece.
+function telWhatsApp(t){
+  let n=(''+(t||'')).replace(/[^\d+]/g,'');
+  if(!n)return null;
+  if(n.startsWith('+'))n=n.slice(1);
+  if(n.startsWith('54')){
+    let r=n.slice(2);
+    if(r.startsWith('9'))r=r.slice(1);
+    if(r.startsWith('0'))r=r.slice(1);
+    r=sacar15(r);
+    return r.length>=10?'549'+r:null;
+  }
+  if(n.startsWith('00'))n=n.slice(2);
+  if(n.startsWith('0'))n=n.slice(1);
+  n=sacar15(n);
+  if(n.length===10)return '549'+n;            // argentino sin código de país
+  if(n.length>=11&&n.length<=15)return n;      // de otro país, ya completo
+  return null;
+}
+// Un celular argentino sin el 15 tiene 10 dígitos. Con el 15, doce: el 15 va
+// justo después del área, que puede ser de 2 dígitos (11), 3 (341) o 4 (2920).
+function sacar15(n){
+  if(n.length===12){
+    for(const largo of [2,3,4]){
+      if(n.slice(largo,largo+2)==='15')return n.slice(0,largo)+n.slice(largo+2);
+    }
+  }
+  return n;
+}
+// El mismo texto sirve para abrir WhatsApp o para copiarlo y pegarlo donde sea.
+function textoBienvenida(c){
+  const extra=c.mail?'':'\n\nUna cosa más: pasame tu correo de Gmail así te habilito el respaldo automático en tu Google Drive.';
+  return `Hola ${c.nombre.split(' ')[0]}! Tu clave para Gestión del Campo es:\n\n${c.clave}\n\nEntrá a gestioncampo.com, pegala una vez y listo. Cualquier cosa avisame.${extra}`;
+}
+function copiarMensaje(id,btn){
+  const c=clientes.find(x=>x.id===id);
+  if(!c)return;
+  copiar(textoBienvenida(c),btn);
+}
 function mandarWA(id){
   const c=clientes.find(x=>x.id===id);
-  const t=encodeURIComponent(`Hola ${c.nombre.split(' ')[0]}! Tu clave para Gestión del Campo es:\n\n${c.clave}\n\nEntrá a gestioncampo.com, pegala una vez y listo. Cualquier cosa avisame.`);
-  window.open('https://wa.me/?text='+t,'_blank');
+  const t=encodeURIComponent(textoBienvenida(c));
+  // Con el número, WhatsApp abre el chat directo aunque no esté agendado.
+  // Sin número, abre el selector de contactos como antes.
+  const num=telWhatsApp(c.tel);
+  window.open('https://wa.me/'+(num||'')+'?text='+t,'_blank');
 }
 
 // Editar datos y vencimiento. Sirve sobre todo para las cuentas de cortesía:
@@ -702,6 +751,7 @@ function editarCliente(id){
   editandoId=id;
   document.getElementById('e-nom').value=c.nombre;
   document.getElementById('e-tel').value=c.tel==='—'?'':c.tel;
+  document.getElementById('e-mail').value=c.mail||'';
   document.getElementById('e-precio').value=c.precio;
   document.getElementById('e-vence').value=c.vence||'';
   document.getElementById('editar-err').style.display='none';
@@ -723,13 +773,15 @@ async function guardarEdicion(){
   const e=document.getElementById('editar-err');
   const nombre=document.getElementById('e-nom').value.trim();
   const tel=document.getElementById('e-tel').value.trim();
+  const mail=document.getElementById('e-mail').value.trim();
   const pTxt=document.getElementById('e-precio').value.replace(/\D/g,'');
   const precio=pTxt===''?NaN:parseInt(pTxt);
   const vence=document.getElementById('e-vence').value;
   if(!nombre){e.textContent='Falta el nombre.';e.style.display='block';return}
   if(isNaN(precio)||precio<0){e.textContent='Poné un precio por mes (0 si es gratis).';e.style.display='block';return}
   if(!/^\d{4}-\d{2}-\d{2}$/.test(vence)){e.textContent='Elegí hasta cuándo tiene la cuenta paga.';e.style.display='block';return}
-  const datos={id:editandoId,nombre,tel,precio,vence};
+  if(mail&&!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(mail)){e.textContent='Ese correo no parece válido.';e.style.display='block';return}
+  const datos={id:editandoId,nombre,tel,mail,precio,vence};
   if(demo){Object.assign(c,datos);cerrarEditar();pintar();verFicha(datos.id);return}
   const btn=document.querySelector('#velo-editar .btn-pri');
   btn.disabled=true;btn.textContent='Guardando...';
@@ -753,6 +805,10 @@ function verFicha(id){
   else if(d<=7)avisos+=`<div class="aviso a-amar"><span>📅</span><div>Le vence en ${d} día${d===1?'':'s'}. Buen momento para recordarle.</div></div>`;
   if(c.visto&&dv>=14&&!c.baja)avisos+=`<div class="aviso a-amar"><span>📉</span><div><b>Hace ${dv} días que no abre la app.</b> Aunque esté pagando, este es el que se da de baja el mes que viene. Llamalo.</div></div>`;
   if(!c.precio)avisos+='<div class="aviso a-cielo"><span>🎁</span><div><b>Cuenta gratis.</b> No suma a la facturación ni aparece en los avisos de vencimiento.</div></div>';
+  // Mientras la app no esté publicada en Google, cada cuenta hay que
+  // autorizarla a mano para que pueda usar el respaldo en Drive.
+  if(c.tel&&c.tel!=='—'&&!telWhatsApp(c.tel))avisos+='<div class="aviso a-amar"><span>📱</span><div><b>El teléfono no se entiende.</b> Al mandar el WhatsApp vas a tener que elegir el contacto a mano. Cargalo con característica, por ejemplo <b>2920 44-1188</b>.</div></div>';
+  if(!c.mail&&!c.baja)avisos+='<div class="aviso a-amar"><span>☁️</span><div><b>Falta el correo de Google.</b> Sin eso no lo podés autorizar para el respaldo en Drive: le va a decir "Acceso bloqueado". Tocá <b>✎ Editar</b> y cargalo.</div></div>';
   if(c.equipos>=3)avisos+=`<div class="aviso a-cielo"><span>💻</span><div>Se usa desde <b>${c.equipos} equipos distintos</b>. Puede ser que tenga la app en el campo y en la casa, o que haya compartido la clave.</div></div>`;
 
   document.getElementById('ficha').innerHTML=`
@@ -765,6 +821,7 @@ function verFicha(id){
       ${avisos}
       <div class="dato"><span class="k">Clave</span><span class="v"><span class="clave">${esc(c.clave)}</span></span></div>
       <div class="dato"><span class="k">Contacto</span><span class="v">${esc(c.tel)}</span></div>
+      <div class="dato"><span class="k">Correo de Google</span><span class="v">${c.mail?esc(c.mail):'<span style="color:var(--tinta-3);font-weight:400">sin cargar</span>'}</span></div>
       <div class="dato"><span class="k">Precio por mes</span><span class="v">${c.precio?pesos(c.precio):'Gratis'}</span></div>
       <div class="dato"><span class="k">Paga hasta</span><span class="v">${aFecha(c.vence)}</span></div>
       <div class="dato"><span class="k">Cliente desde</span><span class="v">${aFecha(c.alta)}</span></div>
@@ -774,7 +831,9 @@ function verFicha(id){
 
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px">
         <button class="btn btn-mini" onclick="copiar('${c.clave}',this)">📋 Copiar clave</button>
+        ${c.mail?`<button class="btn btn-mini" onclick="copiar('${esc(c.mail)}',this)" title="Para pegarlo en los usuarios de prueba de Google Cloud">📋 Copiar correo</button>`:''}
         <button class="btn btn-mini" onclick="mandarWA(${c.id})">💬 Mandar por WhatsApp</button>
+        <button class="btn btn-mini" onclick="copiarMensaje(${c.id},this)" title="Copiar el mensaje completo para pegarlo donde quieras">📋 Copiar mensaje</button>
         ${c.baja?`<button class="btn btn-pri btn-mini" onclick="reactivar(${c.id})">Reactivar</button>`
                 :`<button class="btn btn-pri btn-mini" onclick="marcarPago(${c.id})">Registrar pago</button>`}
         <button class="btn btn-mini" onclick="editarCliente(${c.id})">✎ Editar</button>
@@ -793,6 +852,7 @@ function abrirAlta(){
   document.getElementById('velo-alta').classList.add('on');
   document.getElementById('a-nom').value='';
   document.getElementById('a-tel').value='';
+  document.getElementById('a-mail').value='';
   document.getElementById('alta-err').style.display='none';
   setTimeout(()=>document.getElementById('a-nom').focus(),50);
 }
@@ -800,20 +860,22 @@ function cerrarAlta(){document.getElementById('velo-alta').classList.remove('on'
 async function guardarAlta(){
   const n=document.getElementById('a-nom').value.trim();
   const t=document.getElementById('a-tel').value.trim();
+  const m=document.getElementById('a-mail').value.trim();
   const pTxt=(document.getElementById('a-precio').value||'').replace(/\D/g,'');
   const p=pTxt===''?NaN:parseInt(pTxt);
   const e=document.getElementById('alta-err');
   if(!n){e.textContent='Falta el nombre del cliente.';e.style.display='block';return}
+  if(m&&!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(m)){e.textContent='Ese correo no parece válido.';e.style.display='block';return}
   if(isNaN(p)||p<0){e.textContent='Poné un precio por mes (0 si es una cuenta gratis).';e.style.display='block';return}
   if(demo){
-    const c={id:Date.now(),nombre:n,tel:t||'—',clave:nuevaClave(),precio:p,
+    const c={id:Date.now(),nombre:n,tel:t||'—',mail:m,clave:nuevaClave(),precio:p,
       vence:hoyMas(30),alta:HOY.toISOString().slice(0,10),visto:hoyMas(0),equipos:0,baja:false,pagos:[]};
     clientes.push(c);cerrarAlta();pintar();verFicha(c.id);return;
   }
   const btn=document.querySelector('#velo-alta .btn-pri');
   btn.disabled=true;btn.textContent='Creando...';
   try{
-    const j=await api('/admin/alta',{nombre:n,tel:t,precio:p});
+    const j=await api('/admin/alta',{nombre:n,tel:t,mail:m,precio:p});
     clientes.push(j.cliente);errorBanner('');
     cerrarAlta();pintar();verFicha(j.cliente.id);
   }catch(err){e.textContent='No se pudo crear: '+err.message;e.style.display='block'}
