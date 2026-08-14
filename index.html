@@ -725,8 +725,7 @@ function sacar15(n){
 }
 // El mismo texto sirve para abrir WhatsApp o para copiarlo y pegarlo donde sea.
 function textoBienvenida(c){
-  const extra=c.mail?'':'\n\nUna cosa más: pasame tu correo de Gmail así te habilito el respaldo automático en tu Google Drive.';
-  return `Hola ${c.nombre.split(' ')[0]}! Tu clave para Gestión del Campo es:\n\n${c.clave}\n\nEntrá a gestioncampo.com, pegala una vez y listo. Cualquier cosa avisame.${extra}`;
+  return `Hola ${c.nombre.split(' ')[0]}! Tu clave para Gestión del Campo es:\n\n${c.clave}\n\nEntrá a gestioncampo.com, pegala una vez y listo. Cualquier cosa avisame.`;
 }
 function copiarMensaje(id,btn){
   const c=clientes.find(x=>x.id===id);
