@@ -364,6 +364,28 @@ tbody tr:hover{background:#FAF7F0}
   </div>
 </div>
 
+<!-- Modal propio: reemplaza los confirm/prompt/alert nativos del navegador.
+     Un solo cuadro que sirve para avisos, confirmaciones sí/no y confirmación
+     escribiendo un texto. Se maneja con la función dialogo() más abajo. -->
+<div class="velo" id="velo-dlg" style="z-index:90" onclick="if(event.target===this)cerrarDialogo(false)">
+  <div class="ficha" style="max-width:420px">
+    <div class="ficha-top">
+      <h2 id="dlg-titulo"></h2>
+      <button class="cerrar" onclick="cerrarDialogo(false)">×</button>
+    </div>
+    <div class="ficha-cuerpo">
+      <div id="dlg-cuerpo" style="font-size:14px;color:var(--tinta-2);line-height:1.55;white-space:pre-line"></div>
+      <label class="campo-l" id="dlg-input-l" for="dlg-input" style="display:none;margin-top:14px"></label>
+      <input class="inp" id="dlg-input" style="display:none" enterkeyhint="done">
+      <div id="dlg-err" style="display:none;color:var(--ladrillo);font-size:13px;margin:8px 0 0"></div>
+      <div style="display:flex;gap:10px;margin-top:20px">
+        <button class="btn" id="dlg-cancelar" style="flex:1" onclick="cerrarDialogo(false)">Cancelar</button>
+        <button class="btn btn-pri" id="dlg-ok" style="flex:1" onclick="confirmarDialogo()">Aceptar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
 // ============ CONEXIÓN CON EL WORKER ============
 // El panel no guarda nada: todo vive en el Worker. Si no hay Worker
@@ -379,6 +401,80 @@ let demo=!API;
 function hoyMas(d){const x=new Date(HOY);x.setDate(x.getDate()+d);return x.toISOString().slice(0,10)}
 function aFecha(iso){if(!iso)return '—';const[a,m,d]=iso.split('-');return d+'/'+m+'/'+a}
 function pesos(n){return '$'+fNum.format(n||0)}
+
+// ============ DIÁLOGO PROPIO ============
+// Reemplaza confirm/prompt/alert nativos por un modal con el estilo del panel.
+// Se usa con await. Opciones:
+//   {titulo, cuerpo, ok, cancelar, peligro, pedir, valor, debeCoincidir}
+//   · pedir: label del campo de texto (si se omite, no hay campo → confirm)
+//   · debeCoincidir: si se pasa, el OK sólo se habilita si el texto coincide
+//   · peligro: pinta el botón OK en color ladrillo (acción destructiva)
+//   · sinCancelar: true para un aviso simple (un solo botón, tipo alert)
+// Devuelve: false si cancela; true si confirma sin campo; el texto si hay campo.
+let _dlgResolver=null, _dlgConfig=null;
+function dialogo(cfg){
+  _dlgConfig=cfg||{};
+  const t=document.getElementById('dlg-titulo');
+  const c=document.getElementById('dlg-cuerpo');
+  const inpL=document.getElementById('dlg-input-l');
+  const inp=document.getElementById('dlg-input');
+  const err=document.getElementById('dlg-err');
+  const ok=document.getElementById('dlg-ok');
+  const cancelar=document.getElementById('dlg-cancelar');
+
+  t.textContent=cfg.titulo||'';
+  c.textContent=cfg.cuerpo||'';
+  c.style.display=cfg.cuerpo?'block':'none';
+  err.style.display='none';
+  ok.textContent=cfg.ok||'Aceptar';
+  ok.className='btn '+(cfg.peligro?'btn-peli':'btn-pri');
+  cancelar.textContent=cfg.cancelar||'Cancelar';
+  cancelar.style.display=cfg.sinCancelar?'none':'block';
+
+  if(cfg.pedir){
+    inpL.textContent=cfg.pedir;
+    inpL.style.display='block';
+    inp.style.display='block';
+    inp.value=cfg.valor||'';
+    setTimeout(()=>{inp.focus();inp.select&&inp.select();},60);
+  }else{
+    inpL.style.display='none';
+    inp.style.display='none';
+  }
+
+  document.getElementById('velo-dlg').classList.add('on');
+  return new Promise(res=>{ _dlgResolver=res; });
+}
+function confirmarDialogo(){
+  const cfg=_dlgConfig||{};
+  const inp=document.getElementById('dlg-input');
+  const err=document.getElementById('dlg-err');
+  if(cfg.pedir){
+    const val=inp.value.trim();
+    if(cfg.debeCoincidir!==undefined && val!==cfg.debeCoincidir){
+      err.textContent='No coincide. Escribilo tal cual para confirmar.';
+      err.style.display='block';
+      return;
+    }
+    _cerrarDlg(cfg.pedir?val:true);
+  }else{
+    _cerrarDlg(true);
+  }
+}
+function cerrarDialogo(v){ _cerrarDlg(v?true:false); }
+function _cerrarDlg(valor){
+  document.getElementById('velo-dlg').classList.remove('on');
+  const r=_dlgResolver; _dlgResolver=null; _dlgConfig=null;
+  if(r)r(valor);
+}
+// Enter confirma, Escape cancela (sólo cuando el diálogo está abierto).
+document.getElementById('dlg-input').addEventListener('keydown',e=>{
+  if(e.key==='Enter'){e.preventDefault();confirmarDialogo();}
+});
+document.addEventListener('keydown',e=>{
+  if(!document.getElementById('velo-dlg').classList.contains('on'))return;
+  if(e.key==='Escape')cerrarDialogo(false);
+});
 function diasPara(iso){
   const v=new Date(iso+'T00:00:00'), h=new Date(HOY.toISOString().slice(0,10)+'T00:00:00');
   return Math.round((v-h)/dia);
@@ -395,9 +491,15 @@ function nuevaClave(){
   let s='';for(let i=0;i<8;i++)s+=ALFA[Math.floor(Math.random()*ALFA.length)];
   return 'CAMPO-'+s.slice(0,4)+'-'+s.slice(4);
 }
-function pedirWorker(){
-  const v=prompt('Dirección del Worker\n\nEjemplo: https://gestion-campo.TU-USUARIO.workers.dev\n\n(dejalo vacío para volver al modo prueba)',API);
-  if(v===null)return;
+async function pedirWorker(){
+  const v=await dialogo({
+    titulo:'Dirección del Worker',
+    cuerpo:'Ejemplo: https://gestion-campo.TU-USUARIO.workers.dev\n\n(dejalo vacío para volver al modo prueba)',
+    pedir:'Dirección',
+    valor:API,
+    ok:'Guardar'
+  });
+  if(v===false)return;
   API=v.trim().replace(/\/+$/,'');
   if(API)localStorage.setItem('panel_worker',API);else localStorage.removeItem('panel_worker');
   location.reload();
@@ -599,10 +701,17 @@ function esc(s){return (''+s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>'
 async function eliminarCliente(id){
   const c=clientes.find(x=>x.id===id);
   if(!c)return;
-  if(!confirm(`⚠️ ELIMINAR a ${c.nombre} para siempre\n\nSe borra el cliente, su clave y todo su historial de pagos. NO se puede deshacer.\n\nSi sólo querés que deje de usar la app, cerrá esto y usá "Baja": queda archivado y lo podés reactivar.\n\n¿Eliminar igual?`))return;
-  const r=prompt(`Para confirmar, escribí el nombre tal cual:\n\n${c.nombre}`);
-  if(r===null)return;
-  if(r.trim()!==c.nombre){alert('El nombre no coincide. No se eliminó nada.');return}
+  // Confirmación escribiendo el nombre: red de seguridad contra borrados
+  // accidentales. Se conserva a propósito, es una acción irreversible.
+  const r=await dialogo({
+    titulo:'Eliminar para siempre',
+    cuerpo:`Se borra a ${c.nombre}, su clave y todo su historial de pagos. Esto NO se puede deshacer.\n\nSi sólo querés que deje de usar la app, cancelá y usá "Baja": queda archivado y lo podés reactivar.\n\nPara confirmar, escribí el nombre tal cual:`,
+    pedir:'Nombre del cliente',
+    debeCoincidir:c.nombre,
+    ok:'Eliminar',
+    peligro:true
+  });
+  if(r===false)return;
   if(demo){clientes=clientes.filter(x=>x.id!==id);pintar();cerrarFicha();return}
   try{
     await api('/admin/borrar',{id});
@@ -688,7 +797,14 @@ async function marcarPago(id){
 }
 async function darBaja(id){
   const c=clientes.find(x=>x.id===id);
-  if(!confirm(`¿Dar de baja a ${c.nombre}?\n\nDeja de poder usar la app, pero NO se borra: queda archivado con todo su historial y lo podés reactivar cuando quieras.\n\nSus datos del campo no se tocan, viven en su computadora.`))return;
+  if(!c)return;
+  const ok=await dialogo({
+    titulo:`¿Dar de baja a ${c.nombre}?`,
+    cuerpo:'Deja de poder usar la app, pero NO se borra: queda archivado con todo su historial y lo podés reactivar cuando quieras.\n\nSus datos del campo no se tocan, viven en su computadora.',
+    ok:'Dar de baja',
+    peligro:true
+  });
+  if(!ok)return;
   if(demo){c.baja=true;pintar();cerrarFicha();return}
   try{const j=await api('/admin/baja',{id});Object.assign(c,j.cliente);errorBanner('');pintar();cerrarFicha()}
   catch(err){errorBanner('No se pudo dar de baja: '+err.message)}
@@ -703,7 +819,7 @@ function copiar(txt,btn){
   navigator.clipboard.writeText(txt).then(()=>{
     const o=btn.textContent;btn.textContent='✓ Copiado';
     setTimeout(()=>btn.textContent=o,1400);
-  }).catch(()=>alert(txt));
+  }).catch(()=>dialogo({titulo:'Copiá a mano',cuerpo:txt,ok:'Listo',sinCancelar:true}));
 }
 // El teléfono lo cargás como te sale ("2920 44-1188") pero WhatsApp lo
 // necesita en un formato exacto: 54 + 9 + área + número, sin ceros, sin el 15
