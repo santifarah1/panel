@@ -240,6 +240,7 @@ tbody tr:hover{background:#FAF7F0}
     <div class="der">
       <button class="btn btn-pri btn-mini" onclick="abrirAlta()" title="Nuevo cliente">+<span class="btn-txt"> Nuevo cliente</span></button>
       <a class="btn btn-mini" href="https://gestioncampo.com/app.html" target="_blank" rel="noopener" title="Abrir la app de gestión"><span class="btn-txt">Ir a la app </span>↗</a>
+      <button class="btn btn-mini" onclick="abrirCRM()" title="Seguimiento de posibles clientes"><span class="btn-txt">CRM</span></button>
       <button class="btn btn-mini" onclick="recargar()" title="Actualizar">↻</button>
       <button class="btn btn-mini" onclick="salir()" title="Salir"><span class="btn-txt">Salir</span><span class="btn-ico-salir" aria-hidden="true">⏻</span></button>
     </div>
@@ -336,6 +337,50 @@ tbody tr:hover{background:#FAF7F0}
 <!-- ===== FICHA ===== -->
 <div class="velo" id="velo-ficha" onclick="if(event.target===this)cerrarFicha()">
   <div class="ficha" id="ficha"></div>
+</div>
+
+<!-- ===== CRM (seguimiento de posibles clientes) ===== -->
+<div class="velo" id="velo-crm" style="z-index:75" onclick="if(event.target===this)cerrarCRM()">
+  <div class="ficha" style="max-width:760px;width:100%;max-height:90vh;overflow:auto;padding:24px">
+    <div class="ficha-top" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+      <h2 style="margin:0">Seguimiento de contactos</h2>
+      <button class="btn btn-mini" onclick="cerrarCRM()">Cerrar</button>
+    </div>
+    <p style="color:var(--tinta-2);font-size:13px;margin:0 0 16px">Tus posibles clientes, de "recién le escribí" a "ya paga". Vive solo en este dispositivo.</p>
+    <div id="crm-kpis" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px"></div>
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
+      <input id="crm-busca" placeholder="Buscar por nombre…" oninput="crmRender()" style="flex:1;min-width:150px;padding:9px 12px;border:1px solid var(--borde-vivo);border-radius:10px;font-family:inherit;font-size:14px;background:var(--tarjeta);color:var(--tinta)">
+      <button class="btn btn-pri btn-mini" onclick="crmAbrir()">+ Agregar</button>
+    </div>
+    <div id="crm-filtros" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px"></div>
+    <div id="crm-lista" style="display:flex;flex-direction:column;gap:9px"></div>
+    <div style="margin-top:20px;padding-top:14px;border-top:1px solid var(--borde);display:flex;gap:8px;flex-wrap:wrap;justify-content:center">
+      <button class="btn btn-mini" onclick="crmExportar()">⬇ Bajar copia</button>
+      <label class="btn btn-mini" style="cursor:pointer">⬆ Restaurar<input type="file" accept=".json" style="display:none" onchange="crmImportar(event)"></label>
+    </div>
+  </div>
+</div>
+
+<!-- ===== CRM: alta/edición de contacto ===== -->
+<div class="velo" id="velo-crm-edit" style="z-index:80" onclick="if(event.target===this)crmCerrarEdit()">
+  <div class="ficha" style="max-width:480px;width:100%;padding:22px">
+    <h2 id="crm-edit-tit" style="margin:0 0 16px">Nuevo contacto</h2>
+    <input type="hidden" id="crm-id">
+    <div style="margin-bottom:12px"><label style="display:block;font-size:12.5px;font-weight:600;color:var(--tinta-2);margin-bottom:5px">Nombre *</label>
+      <input id="crm-nom" placeholder="Ej: Juan Pérez" autocomplete="off" style="width:100%;padding:9px 11px;border:1px solid var(--borde-vivo);border-radius:9px;font-family:inherit;font-size:14.5px;background:var(--lienzo);color:var(--tinta)"></div>
+    <div style="margin-bottom:12px"><label style="display:block;font-size:12.5px;font-weight:600;color:var(--tinta-2);margin-bottom:5px">Teléfono</label>
+      <input id="crm-tel" placeholder="Ej: 2920 44-0000" inputmode="tel" autocomplete="off" style="width:100%;padding:9px 11px;border:1px solid var(--borde-vivo);border-radius:9px;font-family:inherit;font-size:14.5px;background:var(--lienzo);color:var(--tinta)"></div>
+    <div style="margin-bottom:12px"><label style="display:block;font-size:12.5px;font-weight:600;color:var(--tinta-2);margin-bottom:5px">¿Qué tiene / en qué anda?</label>
+      <input id="crm-int" placeholder="Ej: campo ganadero, usa cuaderno" autocomplete="off" style="width:100%;padding:9px 11px;border:1px solid var(--borde-vivo);border-radius:9px;font-family:inherit;font-size:14.5px;background:var(--lienzo);color:var(--tinta)"></div>
+    <div style="margin-bottom:12px"><label style="display:block;font-size:12.5px;font-weight:600;color:var(--tinta-2);margin-bottom:5px">Etapa</label>
+      <div id="crm-etapa" style="display:flex;gap:6px;flex-wrap:wrap"></div></div>
+    <div style="margin-bottom:12px"><label style="display:block;font-size:12.5px;font-weight:600;color:var(--tinta-2);margin-bottom:5px">Notas</label>
+      <textarea id="crm-notas" placeholder="Qué le dijiste, qué te dijo, cuándo seguir…" style="width:100%;min-height:64px;resize:vertical;padding:9px 11px;border:1px solid var(--borde-vivo);border-radius:9px;font-family:inherit;font-size:14.5px;background:var(--lienzo);color:var(--tinta)"></textarea></div>
+    <div id="crm-links" style="display:flex;gap:8px;margin-bottom:12px"></div>
+    <div style="display:flex;gap:8px"><button class="btn btn-mini" style="flex:1" onclick="crmCerrarEdit()">Cancelar</button>
+      <button class="btn btn-pri btn-mini" style="flex:1" onclick="crmGuardar()">Guardar</button></div>
+    <div style="text-align:center"><button id="crm-borrar" onclick="crmBorrar()" style="display:none;background:none;border:none;color:var(--ladrillo,#A6533A);font-size:12.5px;cursor:pointer;margin-top:12px;font-family:inherit;text-decoration:underline">Borrar este contacto</button></div>
+  </div>
 </div>
 
 <!-- ===== ALTA ===== -->
@@ -1016,6 +1061,127 @@ if(demo){
   document.querySelector('.caja-login p').innerHTML='Gestión del Campo<br><span style="font-size:12px;color:var(--tinta-3)">Modo prueba · clave: campo · <a href="#" onclick="pedirWorker();return false">configurar servidor</a></span>';
 }
 document.getElementById('clave').focus();
+
+/* ============================================================
+   CRM — seguimiento de posibles clientes (aparte de los que pagan)
+   Vive dentro del panel, datos en localStorage de este dispositivo.
+   Todo con prefijo crm* y clave propia para no tocar el resto del panel.
+   ============================================================ */
+const CRM_KEY='gc-crm';
+const CRM_ETAPAS=[
+  {id:'contactado',txt:'Contactado'},
+  {id:'interesado',txt:'Interesado'},
+  {id:'probando',txt:'Probando'},
+  {id:'ganado',txt:'Ya paga'},
+  {id:'perdido',txt:'No va'},
+];
+const CRM_COL={contactado:['#DFE6EE','#4A6B8A'],interesado:['#F4EAD0','#8A6B22'],probando:['#E7EDD9','#48632E'],ganado:['#5C7A3D','#fff'],perdido:['#F0E1D8','#A6533A']};
+let crmDatos=crmCargar();
+let crmFiltro='';
+let crmEditId=null;
+
+function crmCargar(){
+  const raw=localStorage.getItem(CRM_KEY);
+  if(!raw){
+    // arranca con los contactos reales de ejemplo
+    return {version:1,contactos:[
+      {id:'ej1',nom:'Profe (contabilidad)',tel:'',interes:'Contador, está probando la app',notas:'Entró a la app el 20/8. Seguir en unos días: preguntarle qué le pareció + tema margen negativo de Agricultura.',etapa:'probando',actualizado:'2026-08-20'},
+      {id:'ej2',nom:'Contacto de mamá (productor)',tel:'',interes:'Productor, se lo pasó mi mamá',notas:'Preguntar a mamá qué le mandó exactamente y pedir el contacto directo.',etapa:'contactado',actualizado:'2026-08-19'}
+    ]};
+  }
+  try{const d=JSON.parse(raw);if(!d.contactos)d.contactos=[];d.version=1;return d;}
+  catch(e){localStorage.setItem(CRM_KEY+'-corrupto-'+Date.now(),raw);return {version:1,contactos:[]};}
+}
+function crmGuardarDatos(){localStorage.setItem(CRM_KEY,JSON.stringify(crmDatos));}
+function crmEsc(s){return(''+(s||'')).replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));}
+function crmEtapaTxt(id){const e=CRM_ETAPAS.find(x=>x.id===id);return e?e.txt:id;}
+
+function abrirCRM(){document.getElementById('velo-crm').classList.add('on');crmRender();}
+function cerrarCRM(){document.getElementById('velo-crm').classList.remove('on');}
+
+function crmRender(){
+  const q=(document.getElementById('crm-busca').value||'').toLowerCase();
+  const c=crmDatos.contactos;
+  const cuenta=id=>c.filter(x=>x.etapa===id).length;
+  document.getElementById('crm-kpis').innerHTML=`
+    <div class="kpi" style="padding:11px 12px"><div class="pie" style="margin:0;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--tinta-3)">Total</div><div style="font-family:'Space Grotesk';font-size:22px;font-weight:600">${c.length}</div></div>
+    <div class="kpi" style="padding:11px 12px"><div class="pie" style="margin:0;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--tinta-3)">En juego</div><div style="font-family:'Space Grotesk';font-size:22px;font-weight:600;color:var(--trigo,#C9A24B)">${cuenta('interesado')+cuenta('probando')}</div></div>
+    <div class="kpi" style="padding:11px 12px"><div class="pie" style="margin:0;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--tinta-3)">Ya pagan</div><div style="font-family:'Space Grotesk';font-size:22px;font-weight:600;color:var(--campo)">${cuenta('ganado')}</div></div>
+    <div class="kpi" style="padding:11px 12px"><div class="pie" style="margin:0;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--tinta-3)">No fueron</div><div style="font-family:'Space Grotesk';font-size:22px;font-weight:600;color:var(--tinta-3)">${cuenta('perdido')}</div></div>`;
+  document.getElementById('crm-filtros').innerHTML=
+    `<button class="chip ${crmFiltro===''?'on':''}" onclick="crmSetFiltro('')">Todos <span style="opacity:.6">${c.length}</span></button>`+
+    CRM_ETAPAS.map(e=>`<button class="chip ${crmFiltro===e.id?'on':''}" onclick="crmSetFiltro('${e.id}')">${e.txt} <span style="opacity:.6">${cuenta(e.id)}</span></button>`).join('');
+  let lista=c.slice();
+  if(crmFiltro)lista=lista.filter(x=>x.etapa===crmFiltro);
+  if(q)lista=lista.filter(x=>((x.nom||'')+(x.interes||'')+(x.notas||'')).toLowerCase().includes(q));
+  const orden={probando:0,interesado:1,contactado:2,ganado:3,perdido:4};
+  lista.sort((a,b)=>(orden[a.etapa]??9)-(orden[b.etapa]??9)||(b.actualizado||'').localeCompare(a.actualizado||''));
+  const el=document.getElementById('crm-lista');
+  if(!lista.length){el.innerHTML=`<div style="text-align:center;padding:36px 20px;color:var(--tinta-3)">${c.length?'No hay contactos en este filtro.':'Todavía no cargaste contactos. Tocá "+ Agregar".'}</div>`;return;}
+  el.innerHTML=lista.map(x=>{
+    const col=CRM_COL[x.etapa]||['#eee','#333'];
+    return `<div class="panel" style="padding:13px 15px;cursor:pointer;margin:0" onclick="crmAbrir('${x.id}')">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
+        <div><div style="font-weight:600;font-size:15px">${crmEsc(x.nom)}</div>
+        ${x.interes?`<div style="font-size:13px;color:var(--tinta-2);margin-top:2px">${crmEsc(x.interes)}</div>`:''}</div>
+        <span style="background:${col[0]};color:${col[1]};padding:3px 10px;border-radius:20px;font-size:11.5px;font-weight:700;white-space:nowrap">${crmEtapaTxt(x.etapa)}</span>
+      </div>
+      ${x.notas?`<div style="font-size:13px;color:var(--tinta-3);margin-top:7px;white-space:pre-wrap">${crmEsc(x.notas)}</div>`:''}
+      ${x.tel?`<div style="font-size:11.5px;color:var(--tinta-3);margin-top:8px">📞 ${crmEsc(x.tel)}</div>`:''}
+    </div>`;
+  }).join('');
+}
+function crmSetFiltro(e){crmFiltro=e;crmRender();}
+
+function crmAbrir(id){
+  crmEditId=id||null;
+  const c=id?crmDatos.contactos.find(x=>x.id===id):null;
+  document.getElementById('crm-edit-tit').textContent=c?'Editar contacto':'Nuevo contacto';
+  document.getElementById('crm-nom').value=c?c.nom:'';
+  document.getElementById('crm-tel').value=c?(c.tel||''):'';
+  document.getElementById('crm-int').value=c?(c.interes||''):'';
+  document.getElementById('crm-notas').value=c?(c.notas||''):'';
+  const etAct=c?c.etapa:'contactado';
+  document.getElementById('crm-etapa').innerHTML=CRM_ETAPAS.map(e=>
+    `<button class="chip ${e.id===etAct?'on':''}" data-e="${e.id}" onclick="crmElegirEtapa('${e.id}')">${e.txt}</button>`).join('');
+  const links=document.getElementById('crm-links');
+  if(c&&c.tel){const tel=(c.tel||'').replace(/[^0-9]/g,'');
+    links.innerHTML=`<a class="btn btn-mini" style="flex:1;text-align:center" href="https://wa.me/${tel}" target="_blank">💬 WhatsApp</a><a class="btn btn-mini" style="flex:1;text-align:center" href="tel:${tel}">📞 Llamar</a>`;
+  }else links.innerHTML='';
+  document.getElementById('crm-borrar').style.display=c?'inline':'none';
+  document.getElementById('velo-crm-edit').classList.add('on');
+}
+function crmElegirEtapa(e){document.querySelectorAll('#crm-etapa .chip').forEach(el=>el.classList.toggle('on',el.dataset.e===e));}
+function crmCerrarEdit(){document.getElementById('velo-crm-edit').classList.remove('on');}
+function crmGuardar(){
+  const nom=document.getElementById('crm-nom').value.trim();
+  if(!nom){alert('Poné al menos el nombre');return;}
+  const etapa=(document.querySelector('#crm-etapa .chip.on')||{}).dataset?.e||'contactado';
+  const obj={nom,tel:document.getElementById('crm-tel').value.trim(),interes:document.getElementById('crm-int').value.trim(),
+    notas:document.getElementById('crm-notas').value.trim(),etapa,actualizado:new Date().toISOString().slice(0,10)};
+  if(crmEditId){const i=crmDatos.contactos.findIndex(x=>x.id===crmEditId);if(i>=0)crmDatos.contactos[i]=Object.assign(crmDatos.contactos[i],obj);}
+  else{obj.id='c'+Date.now()+Math.random().toString(36).slice(2,6);obj.creado=new Date().toISOString().slice(0,10);crmDatos.contactos.push(obj);}
+  crmGuardarDatos();crmCerrarEdit();crmRender();
+}
+function crmBorrar(){
+  if(!crmEditId)return;
+  if(!confirm('¿Borrar este contacto? No se puede deshacer.'))return;
+  crmDatos.contactos=crmDatos.contactos.filter(x=>x.id!==crmEditId);
+  crmGuardarDatos();crmCerrarEdit();crmRender();
+}
+function crmExportar(){
+  const blob=new Blob([JSON.stringify(crmDatos,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='crm-campo-'+new Date().toISOString().slice(0,10)+'.json';a.click();
+}
+function crmImportar(ev){
+  const f=ev.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=()=>{try{const d=JSON.parse(r.result);if(!d.contactos||!Array.isArray(d.contactos))throw 0;
+    if(!confirm(`La copia tiene ${d.contactos.length} contactos. Se REEMPLAZAN los actuales. ¿Seguir?`))return;
+    crmDatos=d;crmDatos.version=1;crmGuardarDatos();crmRender();}catch(e){alert('No se pudo leer ese archivo');}};
+  r.readAsText(f);ev.target.value='';
+}
 </script>
 </body>
 </html>
